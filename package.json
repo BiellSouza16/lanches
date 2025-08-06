@@ -1,0 +1,21 @@
+{
+  "name": "sistema-coxinha-real",
+  "version": "1.0.0",
+  "description": "Sistema Interno Coxinha Real - Controle de lançamentos e operações",
+  "main": "index.html",
+  "scripts": {
+    "dev": "http-server . -p 8000 -c-1",
+    "start": "python -m http.server 8000",
+    "serve": "python -m http.server 8000"
+  },
+  "keywords": [
+    "sistema-interno",
+    "controle",
+    "lancamentos"
+  ],
+  "author": "Coxinha Real",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
