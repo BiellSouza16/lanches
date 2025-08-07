@@ -106,6 +106,19 @@ class App {
     }
 
     showLancamentoModal(tipo) {
+        // Garantir que não há conflitos de modal
+        if (modal.activeModal) {
+            modal.hide();
+            // Pequeno delay para garantir que o modal anterior foi fechado
+            setTimeout(() => {
+                this.createAndShowModal(tipo);
+            }, 300);
+        } else {
+            this.createAndShowModal(tipo);
+        }
+    }
+    
+    createAndShowModal(tipo) {
         const modalBody = this.createLancamentoModalBody(tipo);
         const modalFooter = this.createLancamentoModalFooter(tipo);
         
@@ -484,6 +497,11 @@ class App {
             e.preventDefault();
             if (submitButton.disabled) return;
             
+            // Prevenir múltiplos cliques
+            submitButton.disabled = true;
+            const originalText = submitButton.textContent;
+            submitButton.textContent = lancamentosManager.editingLancamento ? 'Atualizando...' : 'Registrando...';
+            
             const success = await lancamentosManager.submitLancamento(tipo);
             if (success) {
                 modal.hide();
@@ -492,11 +510,13 @@ class App {
                 if (this.activeSection === 'restrita' && areaRestrita.isAuthenticated) {
                     // Small delay to ensure modal is fully closed
                     setTimeout(() => {
-                        if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
-                            window.areaRestrita.updateAllContent();
-                        }
+                        areaRestrita.updateAllContent();
                     }, 100);
                 }
+            } else {
+                // Restaurar botão em caso de erro
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
             }
         };
         
@@ -508,7 +528,6 @@ class App {
 }
 
 // Inicializar aplicação
-window.app = new App();
 const app = new App();
 
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
