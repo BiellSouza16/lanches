@@ -252,7 +252,13 @@ class LancamentosManager {
             // Update local data immediately
             lancamento.visto = newVistoState;
 
-            toast.success(newVistoState ? 'Visto adicionado!' : 'Visto removido!');
+            // Show toast with better feedback
+            if (newVistoState) {
+                toast.success('✓ Visto adicionado com sucesso!');
+            } else {
+                toast.warning('Visto removido!');
+            }
+            
             return true;
         } catch (error) {
             console.error('Erro ao alterar visto:', error);
