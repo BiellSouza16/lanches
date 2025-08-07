@@ -341,8 +341,13 @@ class AreaRestrita {
                 deleteBtn.textContent = 'Excluir';
                 deleteBtn.onclick = (e) => {
                     e.stopPropagation();
+                    // Fechar modal atual primeiro
                     modal.hide();
-                    this.confirmDelete(lancamento);
+                    
+                    // Pequeno delay para garantir que o modal foi fechado
+                    setTimeout(() => {
+                        this.showDeleteConfirmation(lancamento);
+                    }, 300);
                 };
                 
                 actions.appendChild(vistoBtn);
@@ -383,6 +388,163 @@ class AreaRestrita {
         
         const modalContent = modal.createModal('Lançamentos Pendentes', modalBody, modalFooter);
         modal.show(modalContent, { size: 'large' });
+    }
+
+    showDeleteConfirmation(lancamento) {
+        const confirmBody = createElement('div', 'text-center space-y-4');
+        
+        const icon = createElement('div', 'flex justify-center mb-4');
+        icon.appendChild(createIcon('alert-triangle', 'w-16 h-16 text-red-500'));
+        
+        const message = createElement('p', 'text-lg font-semibold text-gray-800', 'Confirmar Exclusão');
+        const details = createElement('p', 'text-gray-600', 'Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.');
+        
+        // Mostrar detalhes do lançamento
+        const lancamentoInfo = createElement('div', 'bg-gray-50 p-3 rounded-lg text-sm text-left');
+        const { date, time } = formatDateTime(lancamento.data_hora);
+        
+        let infoText = `<strong>Tipo:</strong> ${lancamento.tipo}<br>`;
+        infoText += `<strong>Data:</strong> ${date} às ${time}<br>`;
+        
+        if (lancamento.funcionario) {
+            infoText += `<strong>Funcionário:</strong> ${lancamento.funcionario}<br>`;
+        }
+        if (lancamento.nome) {
+            infoText += `<strong>Nome:</strong> ${lancamento.nome}<br>`;
+        }
+        
+        lancamentoInfo.innerHTML = infoText;
+        
+        confirmBody.appendChild(icon);
+        confirmBody.appendChild(message);
+        confirmBody.appendChild(details);
+        confirmBody.appendChild(lancamentoInfo);
+        
+        const confirmFooter = createElement('div', 'flex gap-3');
+        
+        const cancelButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400 flex-1');
+        cancelButton.textContent = 'Cancelar';
+        cancelButton.onclick = () => {
+            modal.hide();
+            // Reabrir o modal anterior após um pequeno delay
+            setTimeout(() => {
+                this.showLancamentosModal();
+            }, 300);
+        };
+        
+        const confirmButton = createElement('button', 'btn btn-danger flex-1');
+        confirmButton.textContent = 'Excluir';
+        confirmButton.onclick = async () => {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Excluindo...';
+            
+            const success = await this.deleteLancamento(lancamento.id);
+            if (success) {
+                modal.hide();
+                // Pequeno delay antes de reabrir a lista
+                setTimeout(() => {
+                    this.showLancamentosModal();
+                }, 300);
+            } else {
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Excluir';
+            }
+        };
+        
+        confirmFooter.appendChild(cancelButton);
+        confirmFooter.appendChild(confirmButton);
+        
+        const confirmModal = modal.createModal('Confirmar Exclusão', confirmBody, confirmFooter);
+        modal.show(confirmModal, { size: 'small' });
+    }
+
+    async deleteLancamento(id) {
+        const success = await lancamentosManager.deleteLancamento(id);
+        if (success) {
+            // Não precisa atualizar aqui, será feito quando reabrir o modal
+            return true;
+        }
+        return false;
+    }
+
+    showEstoqueDeleteConfirmation(item) {
+        const confirmBody = createElement('div', 'text-center space-y-4');
+        
+        const icon = createElement('div', 'flex justify-center mb-4');
+        icon.appendChild(createIcon('alert-triangle', 'w-16 h-16 text-red-500'));
+        
+        const message = createElement('p', 'text-lg font-semibold text-gray-800', 'Confirmar Exclusão');
+        const details = createElement('p', 'text-gray-600', 'Tem certeza que deseja excluir este item do estoque? Esta ação não pode ser desfeita.');
+        
+        // Mostrar detalhes do item
+        const itemInfo = createElement('div', 'bg-gray-50 p-3 rounded-lg text-sm text-left');
+        const { date, time } = formatDateTime(item.data_hora);
+        
+        let infoText = `<strong>Nome:</strong> ${item.nome}<br>`;
+        infoText += `<strong>Data:</strong> ${date} às ${time}<br>`;
+        infoText += `<strong>Itens:</strong> ${Object.entries(item.itens).map(([nome, qty]) => `${nome} (${qty})`).join(', ')}`;
+        
+        itemInfo.innerHTML = infoText;
+        
+        confirmBody.appendChild(icon);
+        confirmBody.appendChild(message);
+        confirmBody.appendChild(details);
+        confirmBody.appendChild(itemInfo);
+        
+        const confirmFooter = createElement('div', 'flex gap-3');
+        
+        const cancelButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400 flex-1');
+        cancelButton.textContent = 'Cancelar';
+        cancelButton.onclick = () => {
+            modal.hide();
+            // Reabrir o modal anterior após um pequeno delay
+            setTimeout(() => {
+                this.showEstoqueModal();
+            }, 300);
+        };
+        
+        const confirmButton = createElement('button', 'btn btn-danger flex-1');
+        confirmButton.textContent = 'Excluir';
+        confirmButton.onclick = async () => {
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Excluindo...';
+            
+            const success = await this.deleteEstoqueItem(item.id);
+            if (success) {
+                modal.hide();
+                // Pequeno delay antes de reabrir a lista
+                setTimeout(() => {
+                    this.showEstoqueModal();
+                }, 300);
+            } else {
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Excluir';
+            }
+        };
+        
+        confirmFooter.appendChild(cancelButton);
+        confirmFooter.appendChild(confirmButton);
+        
+        const confirmModal = modal.createModal('Confirmar Exclusão', confirmBody, confirmFooter);
+        modal.show(confirmModal, { size: 'small' });
+    }
+
+    async deleteEstoqueItem(id) {
+        try {
+            const { error } = await supabase
+                .from('Lanches')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            toast.success('Item do estoque excluído com sucesso!');
+            return true;
+        } catch (error) {
+            console.error('Erro ao excluir item do estoque:', error);
+            toast.error('Erro ao excluir item do estoque!');
+            return false;
+        }
     }
 
     async toggleVistoInModal(lancamentoId, cardElement) {
