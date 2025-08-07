@@ -121,6 +121,30 @@ class App {
     createLancamentoModalBody(tipo) {
         const container = createElement('div', 'space-y-6');
         
+        // Campo Data/Hora (apenas para edição)
+        if (lancamentosManager.editingLancamento) {
+            const dateTimeGroup = createElement('div');
+            const dateTimeLabel = createElement('label', 'form-label', 'Data e Hora');
+            const dateTimeInput = createElement('input', 'form-input');
+            dateTimeInput.type = 'datetime-local';
+            
+            // Converter data atual para formato datetime-local
+            const currentDate = new Date(lancamentosManager.editingLancamento.data_hora);
+            const localDateTime = new Date(currentDate.getTime() - currentDate.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
+            dateTimeInput.value = localDateTime;
+            
+            dateTimeInput.onchange = (e) => {
+                const newDateTime = new Date(e.target.value).toISOString();
+                lancamentosManager.updateEditingDateTime(newDateTime);
+            };
+            
+            dateTimeGroup.appendChild(dateTimeLabel);
+            dateTimeGroup.appendChild(dateTimeInput);
+            container.appendChild(dateTimeGroup);
+        }
+        
         // Campo Nome/Funcionário
         const nameGroup = createElement('div');
         const nameLabel = createElement('label', 'form-label', tipo === 'lanche' ? 'Nome do Funcionário' : 'Nome');
@@ -457,12 +481,18 @@ class App {
             (lancamentosManager.editingLancamento ? 'Atualizar' : 'Registrar');
         submitButton.disabled = lancamentosManager.loading;
         submitButton.onclick = async () => {
+            if (submitButton.disabled) return;
+            
             const success = await lancamentosManager.submitLancamento(tipo);
             if (success) {
                 modal.hide();
-                // Atualizar área restrita se estiver ativa
+                
+                // Update restricted area if active
                 if (this.activeSection === 'restrita' && areaRestrita.isAuthenticated) {
-                    areaRestrita.updateAllContent();
+                    // Small delay to ensure modal is fully closed
+                    setTimeout(() => {
+                        areaRestrita.updateAllContent();
+                    }, 100);
                 }
             }
         };
