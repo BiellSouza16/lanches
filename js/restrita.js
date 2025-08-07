@@ -590,6 +590,57 @@ class AreaRestrita {
         });
     }
 
+    updateAllVistoInstances(lancamentoId, newVistoState) {
+        // Find all table rows with this lancamento ID and update them
+        const allTables = document.querySelectorAll('table.table');
+        
+        allTables.forEach(table => {
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                // Find the row that corresponds to this lancamento
+                const vistoButton = row.querySelector('button');
+                if (vistoButton && (
+                    (newVistoState && vistoButton.textContent === 'Dar Visto') ||
+                    (!newVistoState && vistoButton.textContent === 'Remover Visto')
+                )) {
+                    // This might be the same lancamento, update it
+                    const statusCell = row.querySelector('.status-indicator')?.parentElement;
+                    
+                    // Update row styling
+                    if (newVistoState) {
+                        row.classList.remove('item-pending');
+                        row.classList.add('item-visto');
+                        vistoButton.textContent = 'Remover Visto';
+                        vistoButton.className = 'btn btn-sm btn-warning';
+                    } else {
+                        row.classList.remove('item-visto');
+                        row.classList.add('item-pending');
+                        vistoButton.textContent = 'Dar Visto';
+                        vistoButton.className = 'btn btn-sm btn-success';
+                    }
+                    
+                    // Update status indicator
+                    if (statusCell) {
+                        const statusDotElement = statusCell.querySelector('.status-dot');
+                        const statusTextElement = statusCell.querySelector('span');
+                        if (statusDotElement) {
+                            statusDotElement.className = `status-dot ${newVistoState ? 'status-dot-success' : 'status-dot-pending'}`;
+                        }
+                        if (statusTextElement) {
+                            statusTextElement.textContent = newVistoState ? 'Visto' : 'Pendente';
+                        }
+                    }
+                    
+                    // Add visual feedback
+                    row.classList.add('item-updated');
+                    setTimeout(() => {
+                        row.classList.remove('item-updated');
+                    }, 800);
+                }
+            });
+        });
+    }
+
     showTipoModal(tipo, label) {
         const filteredLancamentos = filterManager.filterData(lancamentosManager.getLancamentosByTipo(tipo));
         
