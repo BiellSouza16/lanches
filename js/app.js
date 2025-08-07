@@ -492,7 +492,9 @@ class App {
                 if (this.activeSection === 'restrita' && areaRestrita.isAuthenticated) {
                     // Small delay to ensure modal is fully closed
                     setTimeout(() => {
-                        areaRestrita.updateAllContent();
+                        if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
+                            window.areaRestrita.updateAllContent();
+                        }
                     }, 100);
                 }
             }
@@ -506,6 +508,7 @@ class App {
 }
 
 // Inicializar aplicação
+window.app = new App();
 const app = new App();
 
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
