@@ -247,6 +247,9 @@ class AreaRestrita {
             card.appendChild(value);
             card.appendChild(label);
             statsGrid.appendChild(card);
+            // Adicionar funcionalidade de clique para cada card
+            card.onclick = () => this.handleDashboardCardClick(stat.label, stat.color);
+            
         });
         
         container.appendChild(statsGrid);
@@ -258,6 +261,359 @@ class AreaRestrita {
         return container;
     }
 
+    handleDashboardCardClick(cardType, color) {
+        switch (cardType) {
+            case 'Pendentes':
+                this.showPendentesModal();
+                break;
+            case 'Lançamentos Hoje':
+                this.showLancamentosHojeModal();
+                break;
+            case 'Total de Lançamentos':
+                this.showTotalLancamentosModal();
+                break;
+            case 'Lanches Hoje':
+                this.showLanchesHojeModal();
+                break;
+        }
+    }
+
+    showPendentesModal() {
+        const pendentes = lancamentosManager.lancamentos.filter(l => !l.visto);
+        
+        const modalBody = createElement('div', 'space-y-4');
+        
+        if (pendentes.length === 0) {
+            const emptyState = createElement('div', 'text-center py-8');
+            const icon = createElement('div', 'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4');
+            icon.appendChild(createIcon('check-circle', 'w-8 h-8 text-green-600'));
+            const title = createElement('h3', 'text-lg font-semibold text-gray-800 mb-2', 'Tudo em dia!');
+            const description = createElement('p', 'text-gray-600', 'Não há lançamentos pendentes no momento.');
+            
+            emptyState.appendChild(icon);
+            emptyState.appendChild(title);
+            emptyState.appendChild(description);
+            modalBody.appendChild(emptyState);
+        } else {
+            const header = createElement('div', 'flex items-center justify-between mb-4 pb-4 border-b border-gray-200');
+            const title = createElement('h3', 'text-lg font-semibold text-gray-800 flex items-center');
+            title.appendChild(createIcon('clock', 'w-5 h-5 text-red-600 mr-2'));
+            title.appendChild(document.createTextNode(`${pendentes.length} Lançamentos Pendentes`));
+            
+            const markAllButton = createElement('button', 'btn btn-sm btn-success');
+            markAllButton.textContent = 'Marcar Todos como Visto';
+            markAllButton.onclick = () => this.markAllAsVisto(pendentes);
+            
+            header.appendChild(title);
+            header.appendChild(markAllButton);
+            modalBody.appendChild(header);
+            
+            const pendentesGrid = createElement('div', 'space-y-3 max-h-96 overflow-y-auto');
+            
+            pendentes.forEach(lancamento => {
+                const card = createElement('div', `bg-yellow-50 border border-yellow-200 rounded-lg p-4 hover:bg-yellow-100 transition-all duration-200 cursor-pointer border-l-4 border-l-${this.getTypeColor(lancamento.tipo)}-500`);
+                
+                const cardHeader = createElement('div', 'flex items-center justify-between mb-2');
+                const leftInfo = createElement('div', 'flex items-center gap-2');
+                const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+                const statusDot = createElement('div', 'status-dot status-dot-pending');
+                leftInfo.appendChild(typeBadge);
+                leftInfo.appendChild(statusDot);
+                
+                const actions = createElement('div', 'flex gap-2');
+                const vistoBtn = createElement('button', 'btn btn-sm btn-success');
+                vistoBtn.textContent = 'Visto';
+                vistoBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.toggleVistoInModal(lancamento.id, card);
+                };
+                
+                const editBtn = createElement('button', 'btn btn-sm btn-info');
+                editBtn.textContent = 'Editar';
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.hide();
+                    lancamentosManager.editLancamento(lancamento);
+                    app.showLancamentoModal(lancamento.tipo);
+                };
+                
+                const deleteBtn = createElement('button', 'btn btn-sm btn-danger');
+                deleteBtn.textContent = 'Excluir';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.hide();
+                    this.confirmDelete(lancamento);
+                };
+                
+                actions.appendChild(vistoBtn);
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                cardHeader.appendChild(leftInfo);
+                cardHeader.appendChild(actions);
+                
+                const name = createElement('div', 'font-medium text-gray-800 mb-1', lancamento.funcionario || lancamento.nome || '-');
+                const dateTime = formatDateTime(lancamento.data_hora);
+                const date = createElement('div', 'text-sm text-gray-600 mb-2', `${dateTime.date} às ${dateTime.time}`);
+                
+                const itemsPreview = createElement('div', 'text-xs text-gray-600');
+                const itemsCount = Object.keys(lancamento.itens || {}).length + (lancamento.suco ? 1 : 0);
+                itemsPreview.textContent = `${itemsCount} item(s)`;
+                
+                card.appendChild(cardHeader);
+                card.appendChild(name);
+                card.appendChild(date);
+                card.appendChild(itemsPreview);
+                
+                card.onclick = () => {
+                    modal.hide();
+                    setTimeout(() => this.showLancamentoDetailsModal(lancamento), 100);
+                };
+                
+                pendentesGrid.appendChild(card);
+            });
+            
+            modalBody.appendChild(pendentesGrid);
+        }
+        
+        const modalFooter = createElement('div', 'flex justify-end');
+        const closeButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400');
+        closeButton.textContent = 'Fechar';
+        closeButton.onclick = () => modal.hide();
+        modalFooter.appendChild(closeButton);
+        
+        const modalContent = modal.createModal('Lançamentos Pendentes', modalBody, modalFooter);
+        modal.show(modalContent, { size: 'large' });
+    }
+
+    async toggleVistoInModal(lancamentoId, cardElement) {
+        const success = await lancamentosManager.toggleVisto(lancamentoId);
+        if (success) {
+            // Animar remoção do card
+            cardElement.classList.add('item-removing');
+            setTimeout(() => {
+                if (cardElement.parentNode) {
+                    cardElement.parentNode.removeChild(cardElement);
+                }
+                
+                // Verificar se ainda há pendentes
+                const remainingCards = cardElement.parentNode?.children.length || 0;
+                if (remainingCards === 0) {
+                    modal.hide();
+                    setTimeout(() => this.showPendentesModal(), 100);
+                }
+            }, 300);
+            
+            // Atualizar dashboard em background
+            this.updateAllContent();
+        }
+    }
+
+    async markAllAsVisto(pendentes) {
+        const confirmModal = createElement('div', 'text-center');
+        confirmModal.innerHTML = `
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Marcar Todos como Visto</h3>
+            <p class="text-gray-600">Tem certeza que deseja marcar todos os ${pendentes.length} lançamentos pendentes como visto?</p>
+        `;
+        
+        const confirmFooter = createElement('div', 'flex gap-3');
+        const cancelBtn = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400 flex-1');
+        cancelBtn.textContent = 'Cancelar';
+        cancelBtn.onclick = () => modal.hide();
+        
+        const confirmBtn = createElement('button', 'btn btn-success flex-1');
+        confirmBtn.textContent = 'Confirmar';
+        confirmBtn.onclick = async () => {
+            let successCount = 0;
+            for (const lancamento of pendentes) {
+                const success = await lancamentosManager.toggleVisto(lancamento.id);
+                if (success) successCount++;
+            }
+            
+            modal.hide();
+            if (successCount > 0) {
+                toast.success(`${successCount} lançamentos marcados como visto!`);
+                setTimeout(() => this.showPendentesModal(), 100);
+                this.updateAllContent();
+            }
+        };
+        
+        confirmFooter.appendChild(cancelBtn);
+        confirmFooter.appendChild(confirmBtn);
+        
+        const confirmModalContent = modal.createModal('Confirmar Ação', confirmModal, confirmFooter);
+        modal.show(confirmModalContent, { size: 'small' });
+    }
+
+    showLancamentosHojeModal() {
+        const hoje = new Date().toDateString();
+        const lancamentosHoje = lancamentosManager.lancamentos.filter(l => {
+            return new Date(l.data_hora).toDateString() === hoje;
+        });
+        
+        this.showFilteredLancamentosModal('Lançamentos de Hoje', lancamentosHoje, 'calendar', 'blue');
+    }
+
+    showTotalLancamentosModal() {
+        this.showFilteredLancamentosModal('Todos os Lançamentos', lancamentosManager.lancamentos, 'database', 'green');
+    }
+
+    showLanchesHojeModal() {
+        const hoje = new Date().toDateString();
+        const lanchesHoje = lancamentosManager.lancamentos.filter(l => {
+            return new Date(l.data_hora).toDateString() === hoje && l.tipo === 'lanche';
+        });
+        
+        this.showFilteredLancamentosModal('Lanches de Hoje', lanchesHoje, 'users', 'yellow');
+    }
+
+    showFilteredLancamentosModal(title, lancamentos, icon, color) {
+        const modalBody = createElement('div', 'space-y-4');
+        
+        if (lancamentos.length === 0) {
+            const emptyState = createElement('div', 'text-center py-8');
+            const iconEl = createElement('div', `w-16 h-16 bg-${color}-100 rounded-full flex items-center justify-center mx-auto mb-4`);
+            iconEl.appendChild(createIcon(icon, `w-8 h-8 text-${color}-600`));
+            const titleEl = createElement('h3', 'text-lg font-semibold text-gray-800 mb-2', 'Nenhum lançamento encontrado');
+            const description = createElement('p', 'text-gray-600', 'Não há lançamentos para exibir nesta categoria.');
+            
+            emptyState.appendChild(iconEl);
+            emptyState.appendChild(titleEl);
+            emptyState.appendChild(description);
+            modalBody.appendChild(emptyState);
+        } else {
+            const header = createElement('div', 'flex items-center justify-between mb-4 pb-4 border-b border-gray-200');
+            const titleEl = createElement('h3', 'text-lg font-semibold text-gray-800 flex items-center');
+            titleEl.appendChild(createIcon(icon, `w-5 h-5 text-${color}-600 mr-2`));
+            titleEl.appendChild(document.createTextNode(`${lancamentos.length} Lançamentos`));
+            header.appendChild(titleEl);
+            modalBody.appendChild(header);
+            
+            const lancamentosGrid = createElement('div', 'space-y-3 max-h-96 overflow-y-auto');
+            
+            lancamentos.forEach(lancamento => {
+                const card = createElement('div', `card card-body cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-${this.getTypeColor(lancamento.tipo)}-500 ${lancamento.visto ? 'item-visto' : 'item-pending'}`);
+                
+                const cardHeader = createElement('div', 'flex items-center justify-between mb-2');
+                const leftInfo = createElement('div', 'flex items-center gap-2');
+                const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+                const statusDot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
+                leftInfo.appendChild(typeBadge);
+                leftInfo.appendChild(statusDot);
+                
+                const actions = createElement('div', 'flex gap-2');
+                const vistoBtn = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-secondary' : 'btn-success'}`);
+                vistoBtn.textContent = lancamento.visto ? 'Remover' : 'Visto';
+                vistoBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.toggleVistoInFilteredModal(lancamento.id, card);
+                };
+                
+                const editBtn = createElement('button', 'btn btn-sm btn-info');
+                editBtn.textContent = 'Editar';
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.hide();
+                    lancamentosManager.editLancamento(lancamento);
+                    app.showLancamentoModal(lancamento.tipo);
+                };
+                
+                const deleteBtn = createElement('button', 'btn btn-sm btn-danger');
+                deleteBtn.textContent = 'Excluir';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.hide();
+                    this.confirmDelete(lancamento);
+                };
+                
+                actions.appendChild(vistoBtn);
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                cardHeader.appendChild(leftInfo);
+                cardHeader.appendChild(actions);
+                
+                const name = createElement('div', 'font-medium text-gray-800 mb-1', lancamento.funcionario || lancamento.nome || '-');
+                const dateTime = formatDateTime(lancamento.data_hora);
+                const date = createElement('div', 'text-sm text-gray-600 mb-2', `${dateTime.date} às ${dateTime.time}`);
+                
+                const itemsPreview = createElement('div', 'text-xs text-gray-600');
+                const itemsCount = Object.keys(lancamento.itens || {}).length + (lancamento.suco ? 1 : 0);
+                itemsPreview.textContent = `${itemsCount} item(s)`;
+                
+                card.appendChild(cardHeader);
+                card.appendChild(name);
+                card.appendChild(date);
+                card.appendChild(itemsPreview);
+                
+                card.onclick = () => {
+                    modal.hide();
+                    setTimeout(() => this.showLancamentoDetailsModal(lancamento), 100);
+                };
+                
+                lancamentosGrid.appendChild(card);
+            });
+            
+            modalBody.appendChild(lancamentosGrid);
+        }
+        
+        const modalFooter = createElement('div', 'flex justify-end');
+        const closeButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400');
+        closeButton.textContent = 'Fechar';
+        closeButton.onclick = () => modal.hide();
+        modalFooter.appendChild(closeButton);
+        
+        const modalContent = modal.createModal(title, modalBody, modalFooter);
+        modal.show(modalContent, { size: 'large' });
+    }
+
+    async toggleVistoInFilteredModal(lancamentoId, cardElement) {
+        const success = await lancamentosManager.toggleVisto(lancamentoId);
+        if (success) {
+            // Encontrar o lançamento atualizado
+            const updatedLancamento = lancamentosManager.lancamentos.find(l => l.id === lancamentoId);
+            if (!updatedLancamento) return;
+            
+            // Atualizar visual do card
+            if (updatedLancamento.visto) {
+                cardElement.className = cardElement.className.replace('item-pending', 'item-visto');
+            } else {
+                cardElement.className = cardElement.className.replace('item-visto', 'item-pending');
+            }
+            
+            // Atualizar status dot
+            const statusDot = cardElement.querySelector('.status-dot');
+            if (statusDot) {
+                if (updatedLancamento.visto) {
+                    statusDot.className = 'status-dot status-dot-success';
+                } else {
+                    statusDot.className = 'status-dot status-dot-pending';
+                }
+            }
+            
+            // Atualizar botão
+            const vistoBtn = cardElement.querySelector('button');
+            if (vistoBtn) {
+                if (updatedLancamento.visto) {
+                    vistoBtn.className = 'btn btn-sm btn-secondary';
+                    vistoBtn.textContent = 'Remover';
+                } else {
+                    vistoBtn.className = 'btn btn-sm btn-success';
+                    vistoBtn.textContent = 'Visto';
+                }
+            }
+            
+            // Adicionar animação de atualização
+            cardElement.classList.add('item-updated');
+            setTimeout(() => {
+                cardElement.classList.remove('item-updated');
+            }, 600);
+            
+            // Atualizar dashboard em background
+            this.updateAllContent();
+        }
+    }
     createLancamentosView() {
         const container = createElement('div', 'space-y-6');
         
@@ -785,7 +1141,9 @@ class AreaRestrita {
         vistoButton.onclick = async () => {
             const success = await lancamentosManager.toggleVisto(lancamento.id);
             if (success) {
-                modal.hide();
+                // Atualizar o modal em tempo real
+                this.updateModalContent(lancamento.id, modalBody, modalFooter);
+                // Atualizar o conteúdo da área restrita em background
                 this.updateAllContent();
             }
         };
@@ -818,6 +1176,53 @@ class AreaRestrita {
         modal.show(modalContent, { size: 'large' });
     }
 
+    async updateModalContent(lancamentoId, modalBody, modalFooter) {
+        // Encontrar o lançamento atualizado
+        const updatedLancamento = lancamentosManager.lancamentos.find(l => l.id === lancamentoId);
+        if (!updatedLancamento) return;
+        
+        // Atualizar status indicator no modal
+        const statusIndicator = modalBody.querySelector('.status-indicator');
+        if (statusIndicator) {
+            const statusDot = statusIndicator.querySelector('.status-dot');
+            const statusText = statusIndicator.querySelector('span');
+            
+            if (updatedLancamento.visto) {
+                statusDot.className = 'status-dot status-dot-success';
+                statusText.textContent = 'Visto';
+            } else {
+                statusDot.className = 'status-dot status-dot-pending';
+                statusText.textContent = 'Pendente';
+            }
+        }
+        
+        // Atualizar botão de visto no footer
+        const vistoButton = modalFooter.querySelector('button');
+        if (vistoButton) {
+            if (updatedLancamento.visto) {
+                vistoButton.className = 'btn btn-sm btn-secondary flex-1';
+                vistoButton.textContent = 'Remover Visto';
+            } else {
+                vistoButton.className = 'btn btn-sm btn-success flex-1';
+                vistoButton.textContent = 'Marcar Visto';
+            }
+            
+            // Atualizar o onclick com o lançamento atualizado
+            vistoButton.onclick = async () => {
+                const success = await lancamentosManager.toggleVisto(updatedLancamento.id);
+                if (success) {
+                    this.updateModalContent(updatedLancamento.id, modalBody, modalFooter);
+                    this.updateAllContent();
+                }
+            };
+        }
+        
+        // Adicionar animação de atualização
+        modalBody.classList.add('item-updated');
+        setTimeout(() => {
+            modalBody.classList.remove('item-updated');
+        }, 600);
+    }
     createReportFilterComponent() {
         const container = createElement('div', 'bg-white rounded-xl shadow-lg p-6 mb-6');
         
