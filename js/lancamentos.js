@@ -158,6 +158,19 @@ class LancamentosManager {
     async updateLancamento() {
         if (!this.editingLancamento) return false;
 
+        // Validações básicas
+        if (this.editingLancamento.tipo === 'lanche') {
+            if (!this.funcionario.trim()) {
+                toast.error('Nome do funcionário é obrigatório!');
+                return false;
+            }
+        } else {
+            if (!this.nome.trim()) {
+                toast.error('Nome é obrigatório!');
+                return false;
+            }
+        }
+
         // Filtrar itens com quantidade zero antes de atualizar
         const filteredItems = {};
         Object.entries(this.selectedItems).forEach(([item, quantity]) => {
@@ -177,6 +190,7 @@ class LancamentosManager {
                 suco: this.selectedSuco || undefined,
                 quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
                 tamanho: this.editingLancamento.tipo !== 'estoque' ? this.selectedTamanho : undefined,
+                data_hora: this.editingLancamento.data_hora // Manter a data editada
             };
 
             const { error } = await supabase
@@ -200,8 +214,6 @@ class LancamentosManager {
     }
 
     async deleteLancamento(id) {
-        if (!confirm('Tem certeza que deseja excluir este lançamento?')) return false;
-
         try {
             const { error } = await supabase
                 .from('Lanches')
@@ -224,21 +236,23 @@ class LancamentosManager {
 
     async toggleVisto(id) {
         try {
-            // Buscar o lançamento atual
+            // Find current lancamento
             const lancamento = this.lancamentos.find(l => l.id === id);
             if (!lancamento) return false;
 
+            const newVistoState = !lancamento.visto;
+
             const { error } = await supabase
                 .from('Lanches')
-                .update({ visto: !lancamento.visto })
+                .update({ visto: newVistoState })
                 .eq('id', id);
 
             if (error) throw error;
 
             // Update local data immediately
-            lancamento.visto = !lancamento.visto;
+            lancamento.visto = newVistoState;
 
-            toast.success(lancamento.visto ? 'Visto removido!' : 'Visto adicionado!');
+            toast.success(newVistoState ? 'Visto adicionado!' : 'Visto removido!');
             return true;
         } catch (error) {
             console.error('Erro ao alterar visto:', error);
@@ -255,6 +269,12 @@ class LancamentosManager {
         this.selectedSuco = lancamento.suco || '';
         this.quantidadeSuco = lancamento.quantidade_suco || 0;
         this.selectedTamanho = lancamento.tamanho || '35g';
+    }
+
+    updateEditingDateTime(newDateTime) {
+        if (this.editingLancamento) {
+            this.editingLancamento.data_hora = newDateTime;
+        }
     }
 
     getLancamentosByTipo(tipo) {
