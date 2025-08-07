@@ -203,6 +203,15 @@ class LancamentosManager {
             toast.success('Lançamento atualizado com sucesso!');
             this.resetForm();
             await this.loadLancamentos();
+            
+            // Trigger real-time update for restricted area
+            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
+                // Small delay to ensure the update is processed
+                setTimeout(() => {
+                    window.areaRestrita.updateAllContent();
+                }, 100);
+            }
+            
             return true;
         } catch (error) {
             console.error('Erro ao atualizar lançamento:', error);
@@ -226,6 +235,15 @@ class LancamentosManager {
             this.lancamentos = this.lancamentos.filter(l => l.id !== id);
 
             toast.success('Lançamento excluído com sucesso!');
+            
+            // Trigger real-time update for restricted area
+            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
+                // Small delay to ensure the update is processed
+                setTimeout(() => {
+                    window.areaRestrita.updateAllContent();
+                }, 100);
+            }
+            
             return true;
         } catch (error) {
             console.error('Erro ao excluir lançamento:', error);
@@ -236,12 +254,17 @@ class LancamentosManager {
 
     async toggleVisto(id) {
         try {
-            // Find current lancamento
-            const lancamento = this.lancamentos.find(l => l.id === id);
-            if (!lancamento) return false;
-
+            // Find current lancamento in local data
+            const lancamentoIndex = this.lancamentos.findIndex(l => l.id === id);
+            if (lancamentoIndex === -1) {
+                console.error('Lançamento não encontrado:', id);
+                return false;
+            }
+            
+            const lancamento = this.lancamentos[lancamentoIndex];
             const newVistoState = !lancamento.visto;
 
+            // Make the API call
             const { error } = await supabase
                 .from('Lanches')
                 .update({ visto: newVistoState })
@@ -249,14 +272,23 @@ class LancamentosManager {
 
             if (error) throw error;
 
-            // Update local data immediately
+            // Update local data after successful API call
             lancamento.visto = newVistoState;
+            this.lancamentos[lancamentoIndex] = lancamento;
 
-            // Show toast with better feedback
+            // Show success toast
             if (newVistoState) {
                 toast.success('✓ Visto adicionado com sucesso!');
             } else {
                 toast.warning('Visto removido!');
+            }
+            
+            // Trigger real-time update for restricted area
+            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
+                // Small delay to ensure the update is processed
+                setTimeout(() => {
+                    window.areaRestrita.updateAllContent();
+                }, 100);
             }
             
             return true;
