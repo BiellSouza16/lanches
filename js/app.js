@@ -480,7 +480,8 @@ class App {
             (lancamentosManager.editingLancamento ? 'Atualizando...' : 'Registrando...') : 
             (lancamentosManager.editingLancamento ? 'Atualizar' : 'Registrar');
         submitButton.disabled = lancamentosManager.loading;
-        submitButton.onclick = async () => {
+        submitButton.onclick = async (e) => {
+            e.preventDefault();
             if (submitButton.disabled) return;
             
             const success = await lancamentosManager.submitLancamento(tipo);
