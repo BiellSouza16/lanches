@@ -334,12 +334,13 @@ body {
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 10000;
+    z-index: 1000; /* Base z-index, será ajustado dinamicamente */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
     animation: fadeIn 0.3s ease-out;
+    transition: opacity 0.3s ease;
 }
 
 .modal {
@@ -351,8 +352,8 @@ body {
     overflow-y: auto;
     animation: slideUp 0.4s ease-out;
     width: 100%;
-    z-index: 10001;
     position: relative;
+    z-index: 1;
 }
 
 .modal-header {
@@ -361,8 +362,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: relative;
-    z-index: 10002;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
 }
 
 .modal-title {
@@ -374,7 +377,6 @@ body {
 .modal-body {
     padding: 1.5rem;
     position: relative;
-    z-index: 10002;
 }
 
 .modal-footer {
@@ -382,8 +384,10 @@ body {
     border-top: 1px solid #e5e7eb;
     display: flex;
     gap: 0.75rem;
-    position: relative;
-    z-index: 10002;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    z-index: 2;
 }
 
 .modal-close {
@@ -394,14 +398,32 @@ body {
     padding: 0.25rem;
     border-radius: 9999px;
     transition: all 0.2s ease;
-    z-index: 10003;
-    position: relative;
+    z-index: 3;
 }
 
 .modal-close:hover {
     color: #374151;
     background-color: #f3f4f6;
     transform: scale(1.1);
+}
+
+/* Melhorar visibilidade de modais empilhados */
+.modal-backdrop:not(:last-child) {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Animação suave para transições de modal */
+.modal-backdrop.modal-transitioning {
+    pointer-events: none;
+}
+
+/* Melhor contraste para modais sobrepostos */
+.modal-backdrop + .modal-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-backdrop + .modal-backdrop .modal {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.4);
 }
 
 /* Tables */
@@ -473,7 +495,7 @@ body {
 
 /* Ensure toasts appear above modals */
 #toast-container {
-    z-index: 15000 !important;
+    z-index: 9999 !important;
 }
 
 .toast-success {
@@ -582,8 +604,6 @@ body {
 .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
 .z-50 { z-index: 50; }
 .z-1000 { z-index: 1000; }
-.z-10000 { z-index: 10000; }
-.z-15000 { z-index: 15000; }
 
 /* Overflow */
 .overflow-hidden { overflow: hidden; }
@@ -1038,6 +1058,8 @@ html {
 /* Modal closing animation */
 .modal-closing {
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
 }
 
 /* Enhanced button states */
