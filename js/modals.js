@@ -37,6 +37,9 @@ class ModalManager {
             }
         };
         document.addEventListener('keydown', handleEsc);
+        
+        // Store the escape handler to remove it later
+        backdrop.escapeHandler = handleEsc;
 
         this.container.appendChild(backdrop);
         this.activeModal = backdrop;
@@ -49,13 +52,18 @@ class ModalManager {
 
     hide() {
         if (this.activeModal) {
-            this.activeModal.style.animation = 'fadeIn 0.3s ease-out reverse';
+            // Prevent multiple hide calls
+            if (this.activeModal.classList.contains('modal-closing')) return;
+            
+            this.activeModal.classList.add('modal-closing');
+            this.activeModal.style.animation = 'fadeIn 0.2s ease-out reverse';
+            
             setTimeout(() => {
                 if (this.activeModal && this.activeModal.parentNode) {
                     this.activeModal.parentNode.removeChild(this.activeModal);
                 }
                 this.activeModal = null;
-            }, 300);
+            }, 200);
         }
     }
 
@@ -95,6 +103,21 @@ class ModalManager {
         }
         
         return modalContent;
+    }
+
+    // Method to force close modal (for emergency situations)
+    forceClose() {
+        if (this.activeModal) {
+            // Remove escape handler if it exists
+            if (this.activeModal.escapeHandler) {
+                document.removeEventListener('keydown', this.activeModal.escapeHandler);
+            }
+            
+            if (this.activeModal.parentNode) {
+                this.activeModal.parentNode.removeChild(this.activeModal);
+            }
+            this.activeModal = null;
+        }
     }
 }
 
