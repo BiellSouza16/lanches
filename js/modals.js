@@ -9,7 +9,9 @@ class ModalManager {
         this.hide(); // Fechar modal anterior se existir
 
         const backdrop = createElement('div', 'modal-backdrop');
+        backdrop.style.zIndex = '10000';
         const modal = createElement('div', 'modal');
+        modal.style.zIndex = '10001';
         
         if (options.size === 'large') {
             modal.style.maxWidth = '80vw';
@@ -74,6 +76,7 @@ class ModalManager {
         const header = createElement('div', 'modal-header');
         const titleElement = createElement('h2', 'modal-title', title);
         const closeButton = createElement('button', 'modal-close');
+        closeButton.style.zIndex = '10003';
         closeButton.appendChild(createIcon('x', 'w-6 h-6'));
         closeButton.onclick = () => this.hide();
         
