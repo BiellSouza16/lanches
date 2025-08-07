@@ -453,44 +453,97 @@ class AreaRestrita {
                 const vistoButton = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-warning' : 'btn-success'}`);
                 vistoButton.textContent = lancamento.visto ? 'Remover Visto' : 'Dar Visto';
                 vistoButton.onclick = () => {
-                    // Add loading state
+                    // Prevent multiple clicks
+                    if (vistoButton.disabled) return;
+                    
                     vistoButton.disabled = true;
                     vistoButton.textContent = 'Processando...';
                     
-                    lancamentosManager.toggleVisto(lancamento.id).then((success) => {
+                    try {
+                        const success = await lancamentosManager.toggleVisto(lancamento.id);
+                        
                         if (success) {
-                            // Update row immediately
-                            if (lancamento.visto) {
-                                row.classList.remove('item-visto');
-                                row.classList.add('item-pending');
-                                vistoButton.textContent = 'Dar Visto';
-                                vistoButton.className = 'btn btn-sm btn-success';
-                            } else {
+                            // Update local lancamento object immediately
+                            const newVistoState = !lancamento.visto;
+                            lancamento.visto = newVistoState;
+                            
+                            // Update row styling immediately
+                            if (newVistoState) {
                                 row.classList.remove('item-pending');
                                 row.classList.add('item-visto');
                                 vistoButton.textContent = 'Remover Visto';
                                 vistoButton.className = 'btn btn-sm btn-warning';
+                            } else {
+                                row.classList.remove('item-visto');
+                                row.classList.add('item-pending');
+                                vistoButton.textContent = 'Dar Visto';
+                                vistoButton.className = 'btn btn-sm btn-success';
                             }
+                            
+                            // Update status indicator immediately
+                            const statusDotElement = statusCell.querySelector('.status-dot');
+                            const statusTextElement = statusCell.querySelector('span');
+                            if (statusDotElement) {
+                                statusDotElement.className = `status-dot ${newVistoState ? 'status-dot-success' : 'status-dot-pending'}`;
+                            }
+                            if (statusTextElement) {
+                                statusTextElement.textContent = newVistoState ? 'Visto' : 'Pendente';
+                            }
+                            
+                            // Add visual feedback animation
                             row.classList.add('item-updated');
-                            lancamento.visto = !lancamento.visto;
+                            setTimeout(() => {
+                                row.classList.remove('item-updated');
+                            }, 800);
+                            
+                        } else {
+                            // Restore original state on failure
+                            vistoButton.textContent = originalText;
                         }
+                    } catch (error) {
+                        console.error('Erro ao alterar visto:', error);
+                        vistoButton.textContent = originalText;
+                        toast.error('Erro ao alterar visto!');
+                    } finally {
                         vistoButton.disabled = false;
-                    });
+                    }
                 };
                 
                 const editButton = createElement('button', 'btn btn-info btn-sm');
                 editButton.textContent = 'Editar';
-                editButton.onclick = () => this.editLancamento(lancamento);
+                editButton.onclick = () => {
+                    // Prevent multiple clicks
+                    if (editButton.disabled) return;
+                    editButton.disabled = true;
+                    editButton.textContent = 'Abrindo...';
+                    
+                    setTimeout(() => {
+                        this.editLancamento(lancamento);
+                        editButton.disabled = false;
+                        editButton.textContent = 'Editar';
+                    }, 100);
+                };
                 
                 const deleteButton = createElement('button', 'btn btn-danger btn-sm');
                 deleteButton.textContent = 'Excluir';
                 deleteButton.onclick = () => {
+                    if (deleteButton.disabled) return;
+                    
+                    if (!confirm('Tem certeza que deseja excluir este lançamento?')) {
+                        return;
+                    }
+                    
                     deleteButton.disabled = true;
                     deleteButton.textContent = 'Excluindo...';
                     
                     lancamentosManager.deleteLancamento(lancamento.id).then((success) => {
                         if (success) {
-                            // Animate row removal
+                            // Update local data and animate row removal
+                            const index = this.lancamentos?.findIndex(l => l.id === lancamento.id);
+                            if (index !== -1) {
+                                this.lancamentos.splice(index, 1);
+                            }
+                            
                             row.classList.add('item-removing');
                             setTimeout(() => {
                                 if (row.parentNode) {
@@ -654,8 +707,14 @@ class AreaRestrita {
     }
 
     editLancamento(lancamento) {
-        lancamentosManager.editLancamento(lancamento);
-        app.showLancamentoModal(lancamento.tipo);
+        // Close current modal first
+        modal.hide();
+        
+        // Small delay to ensure modal is closed
+        setTimeout(() => {
+            lancamentosManager.editLancamento(lancamento);
+            app.showLancamentoModal(lancamento.tipo);
+        }, 300);
     }
 
     updateContent(statsSection, resumoSection, historicoSection) {
