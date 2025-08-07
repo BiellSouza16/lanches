@@ -3,15 +3,18 @@ class ModalManager {
     constructor() {
         this.container = document.getElementById('modal-container');
         this.activeModal = null;
+        this.modalStack = []; // Stack para gerenciar modais aninhados
     }
 
     show(content, options = {}) {
-        this.hide(); // Fechar modal anterior se existir
+        // Se já existe um modal ativo, adicionar ao stack
+        if (this.activeModal) {
+            this.modalStack.push(this.activeModal);
+            this.activeModal.style.display = 'none';
+        }
 
         const backdrop = createElement('div', 'modal-backdrop');
-        backdrop.style.zIndex = '10000';
         const modal = createElement('div', 'modal');
-        modal.style.zIndex = '10001';
         
         if (options.size === 'large') {
             modal.style.maxWidth = '80vw';
@@ -35,13 +38,12 @@ class ModalManager {
         const handleEsc = (e) => {
             if (e.key === 'Escape') {
                 this.hide();
-                document.removeEventListener('keydown', handleEsc);
             }
         };
-        document.addEventListener('keydown', handleEsc);
         
         // Store the escape handler to remove it later
         backdrop.escapeHandler = handleEsc;
+        document.addEventListener('keydown', handleEsc);
 
         this.container.appendChild(backdrop);
         this.activeModal = backdrop;
@@ -57,6 +59,11 @@ class ModalManager {
             // Prevent multiple hide calls
             if (this.activeModal.classList.contains('modal-closing')) return;
             
+            // Remove escape handler
+            if (this.activeModal.escapeHandler) {
+                document.removeEventListener('keydown', this.activeModal.escapeHandler);
+            }
+            
             this.activeModal.classList.add('modal-closing');
             this.activeModal.style.animation = 'fadeIn 0.2s ease-out reverse';
             
@@ -64,7 +71,14 @@ class ModalManager {
                 if (this.activeModal && this.activeModal.parentNode) {
                     this.activeModal.parentNode.removeChild(this.activeModal);
                 }
-                this.activeModal = null;
+                
+                // Restaurar modal anterior do stack se existir
+                if (this.modalStack.length > 0) {
+                    this.activeModal = this.modalStack.pop();
+                    this.activeModal.style.display = 'flex';
+                } else {
+                    this.activeModal = null;
+                }
             }, 200);
         }
     }
@@ -76,7 +90,6 @@ class ModalManager {
         const header = createElement('div', 'modal-header');
         const titleElement = createElement('h2', 'modal-title', title);
         const closeButton = createElement('button', 'modal-close');
-        closeButton.style.zIndex = '10003';
         closeButton.appendChild(createIcon('x', 'w-6 h-6'));
         closeButton.onclick = () => this.hide();
         
@@ -110,17 +123,33 @@ class ModalManager {
 
     // Method to force close modal (for emergency situations)
     forceClose() {
-        if (this.activeModal) {
-            // Remove escape handler if it exists
-            if (this.activeModal.escapeHandler) {
-                document.removeEventListener('keydown', this.activeModal.escapeHandler);
+        // Remove all escape handlers
+        if (this.activeModal && this.activeModal.escapeHandler) {
+            document.removeEventListener('keydown', this.activeModal.escapeHandler);
+        }
+        
+        this.modalStack.forEach(modal => {
+            if (modal.escapeHandler) {
+                document.removeEventListener('keydown', modal.escapeHandler);
             }
-            
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        });
+        
+        if (this.activeModal) {
             if (this.activeModal.parentNode) {
                 this.activeModal.parentNode.removeChild(this.activeModal);
             }
-            this.activeModal = null;
         }
+        
+        this.activeModal = null;
+        this.modalStack = [];
+    }
+    
+    // Method to close all modals
+    hideAll() {
+        this.forceClose();
     }
 }
 
