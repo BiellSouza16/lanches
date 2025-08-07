@@ -1,215 +1,998 @@
-// Área Restrita
+// Área Restrita - Sistema de Autenticação e Relatórios
 class AreaRestrita {
     constructor() {
         this.isAuthenticated = false;
-        this.password = '';
-        this.correctPassword = '0716';
-    }
-
-    authenticate(password) {
-        if (password === this.correctPassword) {
-            this.isAuthenticated = true;
-            toast.success('Acesso liberado!');
-            return true;
-        } else {
-            toast.error('Senha incorreta!');
-            return false;
-        }
-    }
-
-    logout() {
-        this.isAuthenticated = false;
-        this.password = '';
+        this.password = '0716'; // Em produção, isso deveria ser mais seguro
+        this.currentView = 'dashboard';
     }
 
     createLoginForm() {
-        const container = createElement('div', 'login-container min-h-screen flex items-center justify-center px-4');
+        const container = createElement('div', 'min-h-screen login-container flex items-center justify-center p-4');
         
-        const formContainer = createElement('div', 'login-form-container p-8 rounded-2xl max-w-md w-full');
+        const formContainer = createElement('div', 'login-form-container w-full max-w-md p-8 rounded-xl');
         
         // Header
-        const header = createElement('div', 'text-center mb-6');
-        const iconContainer = createElement('div', 'login-icon-container w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4');
-        iconContainer.appendChild(createIcon('bar-chart-3', 'w-8 h-8 text-yellow-600'));
+        const header = createElement('div', 'text-center mb-8');
+        const iconContainer = createElement('div', 'login-icon-container w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4');
+        iconContainer.appendChild(createIcon('lock', 'w-10 h-10 text-white'));
         
-        const title = createElement('h2', 'text-2xl font-bold text-gray-800 mb-2', 'Área Restrita');
-        const subtitle = createElement('p', 'text-gray-600', 'Digite a senha para acessar');
+        const title = createElement('h2', 'text-2xl font-bold mb-2', 'Área Restrita');
+        const subtitle = createElement('p', 'text-sm opacity-90', 'Acesso apenas para administradores');
         
         header.appendChild(iconContainer);
         header.appendChild(title);
         header.appendChild(subtitle);
         
         // Form
-        const form = createElement('form', 'space-y-4');
+        const form = createElement('form', 'space-y-6');
         form.onsubmit = (e) => {
             e.preventDefault();
-            const passwordInput = form.querySelector('input[type="password"]');
-            if (this.authenticate(passwordInput.value)) {
-                app.showRestrita();
-            }
+            this.handleLogin();
         };
         
-        const inputContainer = createElement('div', 'password-input-container');
+        const passwordGroup = createElement('div');
+        const passwordLabel = createElement('label', 'form-label', 'Senha');
+        const passwordContainer = createElement('div', 'password-input-container');
         const passwordInput = createElement('input', 'form-input pr-12');
         passwordInput.type = 'password';
-        passwordInput.placeholder = 'Digite a senha';
+        passwordInput.id = 'admin-password';
+        passwordInput.placeholder = 'Digite a senha de administrador';
         passwordInput.required = true;
         
         const toggleButton = createElement('button', 'password-toggle-btn');
         toggleButton.type = 'button';
         toggleButton.appendChild(createIcon('eye', 'w-5 h-5'));
+        toggleButton.onclick = () => this.togglePasswordVisibility();
         
-        toggleButton.onclick = () => {
-            const isPassword = passwordInput.type === 'password';
-            passwordInput.type = isPassword ? 'text' : 'password';
-            toggleButton.innerHTML = '';
-            toggleButton.appendChild(createIcon(isPassword ? 'eye-off' : 'eye', 'w-5 h-5'));
-            initializeLucideIcons();
-        };
-        
-        inputContainer.appendChild(passwordInput);
-        inputContainer.appendChild(toggleButton);
+        passwordContainer.appendChild(passwordInput);
+        passwordContainer.appendChild(toggleButton);
+        passwordGroup.appendChild(passwordLabel);
+        passwordGroup.appendChild(passwordContainer);
         
         const submitButton = createElement('button', 'login-submit-btn w-full');
         submitButton.type = 'submit';
-        submitButton.textContent = 'Acessar';
+        submitButton.textContent = 'Entrar';
         
-        form.appendChild(inputContainer);
+        form.appendChild(passwordGroup);
         form.appendChild(submitButton);
         
         // Back button
-        const backContainer = createElement('div', 'mt-6 text-center');
-        const backButton = createElement('button', 'back-to-launches-btn');
+        const backButton = createElement('a', 'back-to-launches-btn mt-6 inline-flex');
+        backButton.href = '#';
+        backButton.onclick = (e) => {
+            e.preventDefault();
+            app.showLancamentos();
+        };
         backButton.appendChild(createIcon('arrow-left', 'w-4 h-4'));
         backButton.appendChild(document.createTextNode('Voltar aos Lançamentos'));
-        backButton.onclick = () => app.showLancamentos();
-        
-        backContainer.appendChild(backButton);
         
         formContainer.appendChild(header);
         formContainer.appendChild(form);
-        formContainer.appendChild(backContainer);
+        formContainer.appendChild(backButton);
         container.appendChild(formContainer);
+        
+        setTimeout(() => initializeLucideIcons(), 0);
         
         return container;
     }
 
+    togglePasswordVisibility() {
+        const passwordInput = document.getElementById('admin-password');
+        const toggleButton = document.querySelector('.password-toggle-btn');
+        const icon = toggleButton.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+            passwordInput.type = 'password';
+            icon.setAttribute('data-lucide', 'eye');
+        }
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    handleLogin() {
+        const passwordInput = document.getElementById('admin-password');
+        const password = passwordInput.value;
+        
+        if (password === this.password) {
+            this.isAuthenticated = true;
+            toast.success('Login realizado com sucesso!');
+            app.showRestrita();
+        } else {
+            toast.error('Senha incorreta!');
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+
     createRestritaContent() {
         const container = createElement('div', 'min-h-screen bg-gradient-to-br from-gray-50 to-gray-100');
+        container.classList.add('page-enter');
+        
         const mainContainer = createElement('div', 'container mx-auto px-4 py-8');
         
         // Header
         const header = createElement('div', 'flex items-center justify-between mb-8');
-        const headerContent = createElement('div');
-        const title = createElement('h1', 'text-3xl font-bold text-gray-800 mb-2', 'Área Restrita');
-        const subtitle = createElement('p', 'text-gray-600', 'Estatísticas e histórico completo');
+        header.classList.add('card-enter');
         
-        headerContent.appendChild(title);
-        headerContent.appendChild(subtitle);
+        const headerLeft = createElement('div', 'flex items-center');
+        headerLeft.appendChild(createIcon('bar-chart-3', 'w-8 h-8 text-gray-700 mr-3'));
+        const title = createElement('h1', 'text-3xl font-bold text-gray-800', 'Área Restrita');
+        headerLeft.appendChild(title);
         
+        const headerRight = createElement('div', 'flex gap-3');
         const logoutButton = createElement('button', 'btn btn-secondary');
         logoutButton.textContent = 'Sair';
-        logoutButton.onclick = () => {
-            this.logout();
-            app.showLancamentos();
-        };
+        logoutButton.onclick = () => this.logout();
         
-        header.appendChild(headerContent);
-        header.appendChild(logoutButton);
+        const backButton = createElement('button', 'btn bg-gray-800 text-white hover:bg-gray-900');
+        backButton.textContent = 'Voltar aos Lançamentos';
+        backButton.onclick = () => app.showLancamentos();
         
-        // Filtro de Datas
-        const filterComponent = filterManager.createFilterComponent();
+        headerRight.appendChild(logoutButton);
+        headerRight.appendChild(backButton);
+        header.appendChild(headerLeft);
+        header.appendChild(headerRight);
         
-        // Estatísticas Globais
-        const statsSection = this.createStatsSection();
+        // Navigation
+        const nav = this.createNavigation();
         
-        // Resumo do Dia
-        const resumoSection = this.createResumoSection();
-        
-        // Histórico por Tipo
-        const historicoSection = this.createHistoricoSection();
+        // Content
+        const content = createElement('div', 'mt-8');
+        this.updateContent(content);
         
         mainContainer.appendChild(header);
-        mainContainer.appendChild(filterComponent);
-        mainContainer.appendChild(statsSection);
-        mainContainer.appendChild(resumoSection);
-        mainContainer.appendChild(historicoSection);
+        mainContainer.appendChild(nav);
+        mainContainer.appendChild(content);
         container.appendChild(mainContainer);
         
-        // Atualizar conteúdo quando filtros mudarem
+        setTimeout(() => initializeLucideIcons(), 0);
+        
+        return container;
+    }
+
+    createNavigation() {
+        const nav = createElement('div', 'bg-white rounded-xl shadow-lg p-6 mb-8');
+        nav.classList.add('card-enter');
+        
+        const navButtons = createElement('div', 'flex gap-4 flex-wrap');
+        
+        const buttons = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'home' },
+            { id: 'lancamentos', label: 'Todos os Lançamentos', icon: 'list' },
+            { id: 'relatorios', label: 'Relatórios', icon: 'bar-chart' }
+        ];
+        
+        buttons.forEach(button => {
+            const btn = createElement('button', `btn ${this.currentView === button.id ? 'btn-primary' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`);
+            btn.appendChild(createIcon(button.icon, 'icon'));
+            btn.appendChild(document.createTextNode(button.label));
+            btn.onclick = () => this.switchView(button.id);
+            navButtons.appendChild(btn);
+        });
+        
+        nav.appendChild(navButtons);
+        return nav;
+    }
+
+    switchView(view) {
+        this.currentView = view;
+        const content = document.querySelector('.min-h-screen .container > div:last-child');
+        if (content) {
+            this.updateContent(content);
+        }
+        
+        // Update navigation buttons
+        const navButtons = document.querySelectorAll('.bg-white.rounded-xl button');
+        navButtons.forEach((btn, index) => {
+            const views = ['dashboard', 'lancamentos', 'relatorios'];
+            if (views[index] === view) {
+                btn.className = 'btn btn-primary';
+            } else {
+                btn.className = 'btn bg-gray-100 text-gray-700 hover:bg-gray-200';
+            }
+        });
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    updateContent(container) {
+        container.innerHTML = '';
+        
+        switch (this.currentView) {
+            case 'dashboard':
+                container.appendChild(this.createDashboard());
+                break;
+            case 'lancamentos':
+                container.appendChild(this.createLancamentosView());
+                break;
+            case 'relatorios':
+                container.appendChild(this.createRelatoriosView());
+                break;
+        }
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    createDashboard() {
+        const container = createElement('div', 'space-y-8');
+        
+        // Stats cards
+        const statsGrid = createElement('div', 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6');
+        
+        const hoje = new Date().toDateString();
+        const lancamentosHoje = lancamentosManager.lancamentos.filter(l => {
+            return new Date(l.data_hora).toDateString() === hoje;
+        });
+        
+        const stats = [
+            { label: 'Lançamentos Hoje', value: lancamentosHoje.length, icon: 'calendar', color: 'blue' },
+            { label: 'Total de Lançamentos', value: lancamentosManager.lancamentos.length, icon: 'database', color: 'green' },
+            { label: 'Lanches Hoje', value: lancamentosHoje.filter(l => l.tipo === 'lanche').length, icon: 'users', color: 'yellow' },
+            { label: 'Pendentes', value: lancamentosManager.lancamentos.filter(l => !l.visto).length, icon: 'clock', color: 'red' }
+        ];
+        
+        stats.forEach(stat => {
+            const card = createElement('div', `card card-body text-center border-l-4 border-${stat.color}-500`);
+            
+            const iconContainer = createElement('div', `w-12 h-12 bg-${stat.color}-100 rounded-full flex items-center justify-center mb-3 mx-auto`);
+            iconContainer.appendChild(createIcon(stat.icon, `w-6 h-6 text-${stat.color}-600`));
+            
+            const value = createElement('div', 'text-2xl font-bold text-gray-800 mb-1', stat.value.toString());
+            const label = createElement('div', 'text-sm text-gray-600', stat.label);
+            
+            card.appendChild(iconContainer);
+            card.appendChild(value);
+            card.appendChild(label);
+            statsGrid.appendChild(card);
+        });
+        
+        container.appendChild(statsGrid);
+        
+        // Recent launches section
+        const recentSection = this.createRecentLaunchesSection();
+        container.appendChild(recentSection);
+        
+        return container;
+    }
+
+    createLancamentosView() {
+        const container = createElement('div', 'space-y-6');
+        
+        // Filter component
+        const filterComponent = filterManager.createFilterComponent(() => {
+            this.updateCategoryTabs(container);
+        });
+        container.appendChild(filterComponent);
+        
+        // Category tabs
+        const categoryTabs = this.createCategoryTabs();
+        container.appendChild(categoryTabs);
+        
+        // Listen for filter changes
         filterManager.addCallback(() => {
-            this.updateContent(statsSection, resumoSection, historicoSection);
+            this.updateCategoryTabs(container);
         });
         
         return container;
     }
 
-    createStatsSection() {
-        const section = createElement('div', 'bg-white rounded-xl shadow-lg p-6 mb-8');
-        const header = createElement('h2', 'text-xl font-bold text-gray-800 mb-4 flex items-center');
-        header.appendChild(createIcon('bar-chart-3', 'w-6 h-6 mr-2 text-yellow-600'));
-        header.appendChild(document.createTextNode('Estatísticas Globais por Produto (Perdas + Sobras)'));
+    updateLancamentosTable(container) {
+        // Clear existing table
+        const existingTable = container.querySelector('table');
+        if (existingTable) {
+            existingTable.remove();
+        }
         
-        const content = createElement('div', 'stats-content');
+        const filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+        
+        if (filteredData.length === 0) {
+            const emptyState = createElement('div', 'p-8 text-center text-gray-500');
+            emptyState.textContent = 'Nenhum lançamento encontrado';
+            container.appendChild(emptyState);
+            return;
+        }
+        
+        const table = createElement('table', 'table w-full');
+        
+        // Header
+        const thead = createElement('thead');
+        const headerRow = createElement('tr');
+        const headers = ['Data/Hora', 'Tipo', 'Nome/Funcionário', 'Itens', 'Status', 'Ações'];
+        
+        headers.forEach(header => {
+            const th = createElement('th', '', header);
+            headerRow.appendChild(th);
+        });
+        
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Body
+        const tbody = createElement('tbody');
+        
+        filteredData.forEach(lancamento => {
+            const row = createElement('tr', lancamento.visto ? 'item-visto' : 'item-pending');
+            
+            // Data/Hora
+            const dateTime = formatDateTime(lancamento.data_hora);
+            const dateCell = createElement('td');
+            dateCell.innerHTML = `<div class="text-sm">${dateTime.date}</div><div class="text-xs text-gray-500">${dateTime.time}</div>`;
+            
+            // Tipo
+            const typeCell = createElement('td');
+            const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+            typeCell.appendChild(typeBadge);
+            
+            // Nome/Funcionário
+            const nameCell = createElement('td', 'text-sm', lancamento.funcionario || lancamento.nome || '-');
+            
+            // Itens
+            const itemsCell = createElement('td', 'text-sm');
+            const itemsList = this.formatItemsList(lancamento);
+            itemsCell.innerHTML = itemsList;
+            
+            // Status
+            const statusCell = createElement('td');
+            const statusIndicator = createElement('div', 'status-indicator');
+            const statusDot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
+            const statusText = createElement('span', 'text-sm', lancamento.visto ? 'Visto' : 'Pendente');
+            statusIndicator.appendChild(statusDot);
+            statusIndicator.appendChild(statusText);
+            statusCell.appendChild(statusIndicator);
+            
+            // Ações
+            const actionsCell = createElement('td');
+            const actionsContainer = createElement('div', 'flex gap-2');
+            
+            // Toggle visto button
+            const vistoButton = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-secondary' : 'btn-success'}`);
+            vistoButton.textContent = lancamento.visto ? 'Remover' : 'Visto';
+            vistoButton.onclick = async () => {
+                const success = await lancamentosManager.toggleVisto(lancamento.id);
+                if (success) {
+                    this.updateAllContent();
+                }
+            };
+            
+            // Edit button
+            const editButton = createElement('button', 'btn btn-sm btn-info');
+            editButton.textContent = 'Editar';
+            editButton.onclick = () => {
+                lancamentosManager.editLancamento(lancamento);
+                app.showLancamentoModal(lancamento.tipo);
+            };
+            
+            // Delete button
+            const deleteButton = createElement('button', 'btn btn-sm btn-danger');
+            deleteButton.textContent = 'Excluir';
+            deleteButton.onclick = () => this.confirmDelete(lancamento);
+            
+            actionsContainer.appendChild(vistoButton);
+            actionsContainer.appendChild(editButton);
+            actionsContainer.appendChild(deleteButton);
+            actionsCell.appendChild(actionsContainer);
+            
+            row.appendChild(dateCell);
+            row.appendChild(typeCell);
+            row.appendChild(nameCell);
+            row.appendChild(itemsCell);
+            row.appendChild(statusCell);
+            row.appendChild(actionsCell);
+            
+            tbody.appendChild(row);
+        });
+        
+        table.appendChild(tbody);
+        container.appendChild(table);
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    confirmDelete(lancamento) {
+        const modalBody = createElement('div', 'text-center');
+        modalBody.innerHTML = `
+            <div class="mb-4">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="trash-2" class="w-8 h-8 text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Confirmar Exclusão</h3>
+                <p class="text-gray-600">Tem certeza que deseja excluir este lançamento?</p>
+                <p class="text-sm text-gray-500 mt-2">Esta ação não pode ser desfeita.</p>
+            </div>
+        `;
+        
+        const modalFooter = createElement('div', 'flex gap-3');
+        
+        const cancelButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400 flex-1');
+        cancelButton.textContent = 'Cancelar';
+        cancelButton.onclick = () => modal.hide();
+        
+        const confirmButton = createElement('button', 'btn btn-danger flex-1');
+        confirmButton.textContent = 'Excluir';
+        confirmButton.onclick = async () => {
+            const success = await lancamentosManager.deleteLancamento(lancamento.id);
+            if (success) {
+                modal.hide();
+                this.updateAllContent();
+            }
+        };
+        
+        modalFooter.appendChild(cancelButton);
+        modalFooter.appendChild(confirmButton);
+        
+        const modalContent = modal.createModal('Confirmar Exclusão', modalBody, modalFooter);
+        modal.show(modalContent, { size: 'small' });
+    }
+
+    createRelatoriosView() {
+        const container = createElement('div', 'space-y-6');
+        
+        // Filter component for reports
+        const reportFilterComponent = this.createReportFilterComponent();
+        container.appendChild(reportFilterComponent);
+        
+        const card = createElement('div', 'card card-body');
+        const title = createElement('h2', 'text-xl font-bold text-gray-800 mb-4', 'Relatórios Estatísticos');
+        
+        // Get filtered data for reports
+        const filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+        const stats = this.getStatisticsByProductFiltered(filteredData);
+        
+        if (stats.length === 0) {
+            const emptyState = createElement('p', 'text-gray-500 text-center py-8', 'Nenhum dado disponível para relatórios');
+            card.appendChild(title);
+            card.appendChild(emptyState);
+        } else {
+            const table = createElement('table', 'table w-full mt-4');
+            
+            // Header
+            const thead = createElement('thead');
+            const headerRow = createElement('tr');
+            ['Produto', 'Perdas', 'Sobras', 'Total'].forEach(header => {
+                const th = createElement('th', '', header);
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Body
+            const tbody = createElement('tbody');
+            let totalPerdas = 0;
+            let totalSobras = 0;
+            let totalGeral = 0;
+            
+            stats.forEach(([produto, data]) => {
+                const row = createElement('tr');
+                
+                const produtoCell = createElement('td', 'font-medium', produto);
+                const perdasCell = createElement('td', 'text-red-600', data.perdas.toString());
+                const sobrasCell = createElement('td', 'text-orange-600', data.sobras.toString());
+                const totalCell = createElement('td', 'font-semibold', data.total.toString());
+                
+                totalPerdas += data.perdas;
+                totalSobras += data.sobras;
+                totalGeral += data.total;
+                
+                row.appendChild(produtoCell);
+                row.appendChild(perdasCell);
+                row.appendChild(sobrasCell);
+                row.appendChild(totalCell);
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            card.appendChild(title);
+            card.appendChild(table);
+            
+            // Total summary card
+            const totalCard = this.createTotalSummaryCard(totalPerdas, totalSobras, totalGeral);
+            container.appendChild(totalCard);
+        }
+        
+        container.appendChild(card);
+        return container;
+    }
+
+    updateAllContent() {
+        if (this.currentView === 'lancamentos') {
+            const tableContainer = document.querySelector('.bg-white.rounded-xl.shadow-lg.overflow-hidden');
+            if (tableContainer) {
+                this.updateLancamentosTable(tableContainer);
+            }
+        } else if (this.currentView === 'dashboard') {
+            const content = document.querySelector('.min-h-screen .container > div:last-child');
+            if (content) {
+                this.updateContent(content);
+            }
+        }
+    }
+
+    getTypeBadgeColor(tipo) {
+        const colors = {
+            'lanche': 'success',
+            'perda': 'warning',
+            'sobra': 'info',
+            'transferencia': 'info',
+            'estoque': 'info'
+        };
+        return colors[tipo] || 'info';
+    }
+
+    getTypeLabel(tipo) {
+        const labels = {
+            'lanche': 'Lanche',
+            'perda': 'Perda',
+            'sobra': 'Sobra',
+            'transferencia': 'Transferência',
+            'estoque': 'Estoque'
+        };
+        return labels[tipo] || tipo;
+    }
+
+    formatItemsList(lancamento) {
+        const items = [];
+        
+        // Adicionar itens
+        if (lancamento.itens && Object.keys(lancamento.itens).length > 0) {
+            Object.entries(lancamento.itens).forEach(([item, quantidade]) => {
+                const itemName = lancamento.tamanho && lancamento.tipo !== 'estoque' ? 
+                    formatSalgadoName(item, lancamento.tamanho) : item;
+                items.push(`${itemName}: ${quantidade}`);
+            });
+        }
+        
+        // Adicionar suco
+        if (lancamento.suco && lancamento.quantidade_suco > 0) {
+            items.push(`${lancamento.suco}: ${lancamento.quantidade_suco}`);
+        }
+        
+        return items.length > 0 ? items.join('<br>') : '-';
+    }
+
+    createRecentLaunchesSection() {
+        const section = createElement('div', 'bg-white rounded-xl shadow-lg p-6');
+        
+        const header = createElement('div', 'flex items-center justify-between mb-4');
+        const title = createElement('h2', 'text-xl font-bold text-gray-800 flex items-center');
+        title.appendChild(createIcon('clock', 'w-6 h-6 mr-2 text-blue-600'));
+        title.appendChild(document.createTextNode('Últimos 5 Lançamentos'));
+        header.appendChild(title);
+        
+        const recentLaunches = lancamentosManager.lancamentos.slice(0, 5);
+        
+        if (recentLaunches.length === 0) {
+            const emptyState = createElement('p', 'text-gray-500 text-center py-8', 'Nenhum lançamento encontrado');
+            section.appendChild(header);
+            section.appendChild(emptyState);
+            return section;
+        }
+        
+        const launchesGrid = createElement('div', 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4');
+        
+        recentLaunches.forEach(lancamento => {
+            const card = createElement('div', `card card-body cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-${this.getTypeColor(lancamento.tipo)}-500`);
+            
+            const cardHeader = createElement('div', 'flex items-center justify-between mb-2');
+            const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+            const statusDot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
+            cardHeader.appendChild(typeBadge);
+            cardHeader.appendChild(statusDot);
+            
+            const name = createElement('div', 'font-medium text-gray-800 mb-1', lancamento.funcionario || lancamento.nome || '-');
+            const dateTime = formatDateTime(lancamento.data_hora);
+            const date = createElement('div', 'text-sm text-gray-500', `${dateTime.date} ${dateTime.time}`);
+            
+            const itemsPreview = createElement('div', 'text-xs text-gray-600 mt-2');
+            const itemsCount = Object.keys(lancamento.itens || {}).length + (lancamento.suco ? 1 : 0);
+            itemsPreview.textContent = `${itemsCount} item(s)`;
+            
+            card.appendChild(cardHeader);
+            card.appendChild(name);
+            card.appendChild(date);
+            card.appendChild(itemsPreview);
+            
+            card.onclick = () => this.showLancamentoDetailsModal(lancamento);
+            
+            launchesGrid.appendChild(card);
+        });
         
         section.appendChild(header);
-        section.appendChild(content);
-        
-        this.updateStatsContent(content);
+        section.appendChild(launchesGrid);
         
         return section;
     }
 
-    updateStatsContent(container) {
-        const filteredLancamentos = filterManager.filterData(lancamentosManager.lancamentos);
-        const stats = this.getFilteredStatistics(filteredLancamentos);
+    createCategoryTabs() {
+        const container = createElement('div', 'bg-white rounded-xl shadow-lg overflow-hidden');
         
+        const tabsHeader = createElement('div', 'flex border-b border-gray-200');
+        const categories = [
+            { id: 'todos', label: 'Todos', icon: 'list' },
+            { id: 'lanche', label: 'Lanches', icon: 'users' },
+            { id: 'perda', label: 'Perdas', icon: 'trending-down' },
+            { id: 'sobra', label: 'Sobras', icon: 'package' },
+            { id: 'transferencia', label: 'Transferências', icon: 'arrow-right-left' },
+            { id: 'estoque', label: 'Estoque', icon: 'warehouse' }
+        ];
+        
+        categories.forEach((category, index) => {
+            const tab = createElement('button', `px-6 py-3 text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${index === 0 ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`);
+            tab.appendChild(createIcon(category.icon, 'w-4 h-4'));
+            tab.appendChild(document.createTextNode(category.label));
+            
+            tab.onclick = () => this.switchCategoryTab(category.id, tabsHeader, container);
+            tabsHeader.appendChild(tab);
+        });
+        
+        const contentContainer = createElement('div', 'category-content');
+        this.updateCategoryContent('todos', contentContainer);
+        
+        container.appendChild(tabsHeader);
+        container.appendChild(contentContainer);
+        
+        return container;
+    }
+
+    switchCategoryTab(categoryId, tabsHeader, container) {
+        // Update tab styles
+        const tabs = tabsHeader.querySelectorAll('button');
+        tabs.forEach((tab, index) => {
+            const categories = ['todos', 'lanche', 'perda', 'sobra', 'transferencia', 'estoque'];
+            if (categories[index] === categoryId) {
+                tab.className = 'px-6 py-3 text-sm font-medium transition-colors duration-200 flex items-center gap-2 bg-blue-50 text-blue-600 border-b-2 border-blue-600';
+            } else {
+                tab.className = 'px-6 py-3 text-sm font-medium transition-colors duration-200 flex items-center gap-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50';
+            }
+        });
+        
+        // Update content
+        const contentContainer = container.querySelector('.category-content');
+        this.updateCategoryContent(categoryId, contentContainer);
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    updateCategoryContent(categoryId, container) {
         container.innerHTML = '';
         
-        if (stats.length > 0) {
-            const grid = createElement('div', 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4');
+        let filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+        
+        if (categoryId !== 'todos') {
+            filteredData = filteredData.filter(l => l.tipo === categoryId);
+        }
+        
+        if (filteredData.length === 0) {
+            const emptyState = createElement('div', 'p-8 text-center text-gray-500');
+            emptyState.textContent = 'Nenhum lançamento encontrado nesta categoria';
+            container.appendChild(emptyState);
+            return;
+        }
+        
+        const grid = createElement('div', 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6');
+        
+        filteredData.forEach(lancamento => {
+            const card = createElement('div', `card card-body cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-${this.getTypeColor(lancamento.tipo)}-500 ${lancamento.visto ? 'item-visto' : 'item-pending'}`);
             
-            stats.forEach(([produto, data]) => {
-                const card = createElement('div', 'bg-gray-50 p-4 rounded-lg');
-                
-                const header = createElement('div', 'flex items-center justify-between');
-                const name = createElement('span', 'font-medium text-gray-700', produto);
-                const total = createElement('span', 'text-lg font-bold text-red-600', data.total.toString());
-                
-                header.appendChild(name);
-                header.appendChild(total);
-                
-                const details = createElement('div', 'text-sm text-gray-600 space-y-1');
-                
-                const perdas = createElement('div', 'flex justify-between');
-                perdas.innerHTML = `<span class="font-medium">Perdas:</span><span class="font-medium text-red-500">${data.perdas}</span>`;
-                
-                const sobras = createElement('div', 'flex justify-between');
-                sobras.innerHTML = `<span class="font-medium">Sobras:</span><span class="font-medium text-orange-500">${data.sobras}</span>`;
-                
-                const totalDiv = createElement('div', 'flex justify-between border-t pt-1');
-                totalDiv.innerHTML = `<span class="font-bold">Total:</span><span class="font-bold text-gray-800">${data.total}</span>`;
-                
-                details.appendChild(perdas);
-                details.appendChild(sobras);
-                details.appendChild(totalDiv);
-                
-                card.appendChild(header);
-                card.appendChild(details);
-                grid.appendChild(card);
-            });
+            const cardHeader = createElement('div', 'flex items-center justify-between mb-2');
+            const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+            const statusIndicator = createElement('div', 'status-indicator');
+            const statusDot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
+            statusIndicator.appendChild(statusDot);
+            cardHeader.appendChild(typeBadge);
+            cardHeader.appendChild(statusIndicator);
             
-            container.appendChild(grid);
-        } else {
-            const emptyMessage = createElement('p', 'text-gray-500 text-center py-8', 'Nenhuma perda ou sobra registrada no período selecionado.');
-            container.appendChild(emptyMessage);
+            const name = createElement('div', 'font-medium text-gray-800 mb-1', lancamento.funcionario || lancamento.nome || '-');
+            const dateTime = formatDateTime(lancamento.data_hora);
+            const date = createElement('div', 'text-sm text-gray-500 mb-2', `${dateTime.date} ${dateTime.time}`);
+            
+            const itemsPreview = createElement('div', 'text-xs text-gray-600');
+            const itemsCount = Object.keys(lancamento.itens || {}).length + (lancamento.suco ? 1 : 0);
+            itemsPreview.textContent = `${itemsCount} item(s)`;
+            
+            card.appendChild(cardHeader);
+            card.appendChild(name);
+            card.appendChild(date);
+            card.appendChild(itemsPreview);
+            
+            card.onclick = () => this.showLancamentoDetailsModal(lancamento);
+            
+            grid.appendChild(card);
+        });
+        
+        container.appendChild(grid);
+    }
+
+    updateCategoryTabs(container) {
+        const categoryContainer = container.querySelector('.bg-white.rounded-xl.shadow-lg.overflow-hidden');
+        if (categoryContainer) {
+            const contentContainer = categoryContainer.querySelector('.category-content');
+            const activeTab = categoryContainer.querySelector('.bg-blue-50');
+            
+            if (contentContainer && activeTab) {
+                const categories = ['todos', 'lanche', 'perda', 'sobra', 'transferencia', 'estoque'];
+                const activeIndex = Array.from(activeTab.parentNode.children).indexOf(activeTab);
+                const activeCategoryId = categories[activeIndex] || 'todos';
+                
+                this.updateCategoryContent(activeCategoryId, contentContainer);
+            }
         }
     }
 
-    getFilteredStatistics(lancamentos) {
+    showLancamentoDetailsModal(lancamento) {
+        const modalBody = createElement('div', 'space-y-4');
+        
+        // Header info
+        const headerInfo = createElement('div', 'bg-gray-50 rounded-lg p-4');
+        const typeInfo = createElement('div', 'flex items-center justify-between mb-2');
+        const typeBadge = createElement('span', `badge badge-${this.getTypeBadgeColor(lancamento.tipo)}`, this.getTypeLabel(lancamento.tipo));
+        const statusIndicator = createElement('div', 'status-indicator');
+        const statusDot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
+        const statusText = createElement('span', 'text-sm ml-2', lancamento.visto ? 'Visto' : 'Pendente');
+        statusIndicator.appendChild(statusDot);
+        statusIndicator.appendChild(statusText);
+        typeInfo.appendChild(typeBadge);
+        typeInfo.appendChild(statusIndicator);
+        
+        const nameInfo = createElement('div', 'text-lg font-semibold text-gray-800', lancamento.funcionario || lancamento.nome || '-');
+        const dateTime = formatDateTime(lancamento.data_hora);
+        const dateInfo = createElement('div', 'text-sm text-gray-600', `${dateTime.date} às ${dateTime.time}`);
+        
+        headerInfo.appendChild(typeInfo);
+        headerInfo.appendChild(nameInfo);
+        headerInfo.appendChild(dateInfo);
+        
+        // Items details
+        const itemsSection = createElement('div');
+        const itemsTitle = createElement('h4', 'font-semibold text-gray-800 mb-2', 'Itens:');
+        const itemsList = createElement('div', 'bg-gray-50 rounded-lg p-4');
+        
+        if (lancamento.itens && Object.keys(lancamento.itens).length > 0) {
+            Object.entries(lancamento.itens).forEach(([item, quantidade]) => {
+                const itemRow = createElement('div', 'flex justify-between items-center py-1');
+                const itemName = lancamento.tamanho && lancamento.tipo !== 'estoque' ? 
+                    formatSalgadoName(item, lancamento.tamanho) : item;
+                const itemNameSpan = createElement('span', 'text-gray-700', itemName);
+                const itemQuantity = createElement('span', 'font-medium text-gray-800', quantidade.toString());
+                itemRow.appendChild(itemNameSpan);
+                itemRow.appendChild(itemQuantity);
+                itemsList.appendChild(itemRow);
+            });
+        }
+        
+        if (lancamento.suco && lancamento.quantidade_suco > 0) {
+            const sucoRow = createElement('div', 'flex justify-between items-center py-1 border-t border-gray-200 mt-2 pt-2');
+            const sucoName = createElement('span', 'text-gray-700', lancamento.suco);
+            const sucoQuantity = createElement('span', 'font-medium text-gray-800', lancamento.quantidade_suco.toString());
+            sucoRow.appendChild(sucoName);
+            sucoRow.appendChild(sucoQuantity);
+            itemsList.appendChild(sucoRow);
+        }
+        
+        itemsSection.appendChild(itemsTitle);
+        itemsSection.appendChild(itemsList);
+        
+        modalBody.appendChild(headerInfo);
+        modalBody.appendChild(itemsSection);
+        
+        // Modal footer with actions
+        const modalFooter = createElement('div', 'flex gap-3');
+        
+        const vistoButton = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-secondary' : 'btn-success'} flex-1`);
+        vistoButton.textContent = lancamento.visto ? 'Remover Visto' : 'Marcar Visto';
+        vistoButton.onclick = async () => {
+            const success = await lancamentosManager.toggleVisto(lancamento.id);
+            if (success) {
+                modal.hide();
+                this.updateAllContent();
+            }
+        };
+        
+        const editButton = createElement('button', 'btn btn-sm btn-info flex-1');
+        editButton.textContent = 'Editar';
+        editButton.onclick = () => {
+            modal.hide();
+            lancamentosManager.editLancamento(lancamento);
+            app.showLancamentoModal(lancamento.tipo);
+        };
+        
+        const deleteButton = createElement('button', 'btn btn-sm btn-danger flex-1');
+        deleteButton.textContent = 'Excluir';
+        deleteButton.onclick = () => {
+            modal.hide();
+            this.confirmDelete(lancamento);
+        };
+        
+        const closeButton = createElement('button', 'btn btn-sm bg-gray-300 text-gray-700 hover:bg-gray-400');
+        closeButton.textContent = 'Fechar';
+        closeButton.onclick = () => modal.hide();
+        
+        modalFooter.appendChild(vistoButton);
+        modalFooter.appendChild(editButton);
+        modalFooter.appendChild(deleteButton);
+        modalFooter.appendChild(closeButton);
+        
+        const modalContent = modal.createModal('Detalhes do Lançamento', modalBody, modalFooter);
+        modal.show(modalContent, { size: 'large' });
+    }
+
+    createReportFilterComponent() {
+        const container = createElement('div', 'bg-white rounded-xl shadow-lg p-6 mb-6');
+        
+        const header = createElement('div', 'flex items-center justify-between mb-4');
+        const title = createElement('h2', 'text-xl font-bold text-gray-800 flex items-center');
+        title.appendChild(createIcon('filter', 'w-6 h-6 mr-2 text-purple-600'));
+        title.appendChild(document.createTextNode('Filtros do Relatório'));
+        header.appendChild(title);
+        
+        const inputsContainer = createElement('div', 'grid grid-cols-1 md:grid-cols-2 gap-4');
+        
+        // Data inicial
+        const startDateGroup = createElement('div');
+        const startDateLabel = createElement('label', 'form-label', 'Data Inicial');
+        const startDateInput = createElement('input', 'form-input');
+        startDateInput.type = 'date';
+        startDateInput.value = filterManager.filters.startDate;
+        startDateInput.onchange = (e) => {
+            filterManager.filters.startDate = e.target.value;
+            this.updateReportContent();
+        };
+        
+        startDateGroup.appendChild(startDateLabel);
+        startDateGroup.appendChild(startDateInput);
+        
+        // Data final
+        const endDateGroup = createElement('div');
+        const endDateLabel = createElement('label', 'form-label', 'Data Final');
+        const endDateInput = createElement('input', 'form-input');
+        endDateInput.type = 'date';
+        endDateInput.value = filterManager.filters.endDate;
+        endDateInput.onchange = (e) => {
+            filterManager.filters.endDate = e.target.value;
+            this.updateReportContent();
+        };
+        
+        endDateGroup.appendChild(endDateLabel);
+        endDateGroup.appendChild(endDateInput);
+        
+        inputsContainer.appendChild(startDateGroup);
+        inputsContainer.appendChild(endDateGroup);
+        
+        // Botão limpar
+        const clearButton = createElement('button', 'btn btn-secondary mt-4');
+        clearButton.textContent = 'Limpar Filtros';
+        clearButton.onclick = () => {
+            filterManager.clearFilters();
+            startDateInput.value = '';
+            endDateInput.value = '';
+            this.updateReportContent();
+        };
+        
+        container.appendChild(header);
+        container.appendChild(inputsContainer);
+        container.appendChild(clearButton);
+        
+        return container;
+    }
+
+    updateReportContent() {
+        if (this.currentView === 'relatorios') {
+            const content = document.querySelector('.min-h-screen .container > div:last-child');
+            if (content) {
+                // Find and update the report cards
+                const reportCards = content.querySelectorAll('.card.card-body');
+                if (reportCards.length > 0) {
+                    const filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+                    const stats = this.getStatisticsByProductFiltered(filteredData);
+                    
+                    // Update the main report table
+                    const mainCard = reportCards[0];
+                    const existingTable = mainCard.querySelector('table');
+                    if (existingTable) {
+                        existingTable.remove();
+                    }
+                    
+                    if (stats.length === 0) {
+                        const emptyState = createElement('p', 'text-gray-500 text-center py-8', 'Nenhum dado disponível para relatórios');
+                        mainCard.appendChild(emptyState);
+                    } else {
+                        const table = createElement('table', 'table w-full mt-4');
+                        
+                        // Header
+                        const thead = createElement('thead');
+                        const headerRow = createElement('tr');
+                        ['Produto', 'Perdas', 'Sobras', 'Total'].forEach(header => {
+                            const th = createElement('th', '', header);
+                            headerRow.appendChild(th);
+                        });
+                        thead.appendChild(headerRow);
+                        table.appendChild(thead);
+                        
+                        // Body
+                        const tbody = createElement('tbody');
+                        let totalPerdas = 0;
+                        let totalSobras = 0;
+                        let totalGeral = 0;
+                        
+                        stats.forEach(([produto, data]) => {
+                            const row = createElement('tr');
+                            
+                            const produtoCell = createElement('td', 'font-medium', produto);
+                            const perdasCell = createElement('td', 'text-red-600', data.perdas.toString());
+                            const sobrasCell = createElement('td', 'text-orange-600', data.sobras.toString());
+                            const totalCell = createElement('td', 'font-semibold', data.total.toString());
+                            
+                            totalPerdas += data.perdas;
+                            totalSobras += data.sobras;
+                            totalGeral += data.total;
+                            
+                            row.appendChild(produtoCell);
+                            row.appendChild(perdasCell);
+                            row.appendChild(sobrasCell);
+                            row.appendChild(totalCell);
+                            tbody.appendChild(row);
+                        });
+                        
+                        table.appendChild(tbody);
+                        mainCard.appendChild(table);
+                        
+                        // Update total summary
+                        const existingTotalCard = content.querySelector('.bg-gradient-to-r');
+                        if (existingTotalCard) {
+                            existingTotalCard.remove();
+                        }
+                        const totalCard = this.createTotalSummaryCard(totalPerdas, totalSobras, totalGeral);
+                        content.appendChild(totalCard);
+                    }
+                }
+            }
+        }
+    }
+
+    createTotalSummaryCard(totalPerdas, totalSobras, totalGeral) {
+        const card = createElement('div', 'bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6 mt-6');
+        
+        const header = createElement('div', 'flex items-center mb-4');
+        header.appendChild(createIcon('calculator', 'w-6 h-6 text-red-600 mr-2'));
+        const title = createElement('h3', 'text-xl font-bold text-gray-800', 'Resumo Total');
+        header.appendChild(title);
+        
+        const statsGrid = createElement('div', 'grid grid-cols-1 md:grid-cols-3 gap-4');
+        
+        const perdasCard = createElement('div', 'bg-white rounded-lg p-4 text-center border-l-4 border-red-500');
+        perdasCard.innerHTML = `
+            <div class="text-2xl font-bold text-red-600">${totalPerdas}</div>
+            <div class="text-sm text-gray-600">Total de Perdas</div>
+        `;
+        
+        const sobrasCard = createElement('div', 'bg-white rounded-lg p-4 text-center border-l-4 border-orange-500');
+        sobrasCard.innerHTML = `
+            <div class="text-2xl font-bold text-orange-600">${totalSobras}</div>
+            <div class="text-sm text-gray-600">Total de Sobras</div>
+        `;
+        
+        const totalCard = createElement('div', 'bg-white rounded-lg p-4 text-center border-l-4 border-gray-500');
+        totalCard.innerHTML = `
+            <div class="text-2xl font-bold text-gray-800">${totalGeral}</div>
+            <div class="text-sm text-gray-600">Total Geral</div>
+        `;
+        
+        statsGrid.appendChild(perdasCard);
+        statsGrid.appendChild(sobrasCard);
+        statsGrid.appendChild(totalCard);
+        
+        card.appendChild(header);
+        card.appendChild(statsGrid);
+        
+        return card;
+    }
+
+    getStatisticsByProductFiltered(filteredData) {
         const stats = {};
         
-        lancamentos
+        filteredData
             .filter(l => l.tipo === 'perda' || l.tipo === 'sobra')
             .forEach(lancamento => {
                 Object.entries(lancamento.itens).forEach(([produto, quantidade]) => {
@@ -233,580 +1016,22 @@ class AreaRestrita {
             .slice(0, 10);
     }
 
-    createResumoSection() {
-        const section = createElement('div', 'bg-white rounded-xl shadow-lg p-6 mb-8');
-        const header = createElement('div', 'flex items-center justify-between mb-4');
-        
-        const title = createElement('h2', 'text-xl font-bold text-gray-800 flex items-center');
-        title.appendChild(createIcon('calendar', 'w-6 h-6 mr-2 text-yellow-600'));
-        title.appendChild(document.createTextNode('Resumo do Período'));
-        
-        const detailsButton = createElement('button', 'btn btn-info btn-sm');
-        detailsButton.textContent = 'Ver Detalhes';
-        detailsButton.onclick = () => this.showResumoModal();
-        
-        header.appendChild(title);
-        header.appendChild(detailsButton);
-        
-        const content = createElement('div', 'resumo-content');
-        
-        section.appendChild(header);
-        section.appendChild(content);
-        
-        this.updateResumoContent(content);
-        
-        return section;
-    }
-
-    updateResumoContent(container) {
-        const filteredLancamentos = filterManager.filterData(lancamentosManager.lancamentos);
-        
-        container.innerHTML = '';
-        
-        const grid = createElement('div', 'grid grid-cols-2 md:grid-cols-5 gap-4');
-        
-        const tipos = [
-            { key: 'lanche', label: 'Lanches', color: 'green' },
-            { key: 'perda', label: 'Perdas', color: 'red' },
-            { key: 'sobra', label: 'Sobras', color: 'orange' },
-            { key: 'transferencia', label: 'Transferências', color: 'blue' },
-            { key: 'estoque', label: 'Estoque', color: 'purple' }
-        ];
-        
-        tipos.forEach(tipo => {
-            const count = filteredLancamentos.filter(l => l.tipo === tipo.key).length;
-            
-            const card = createElement('div', `text-center p-4 bg-${tipo.color}-50 rounded-lg cursor-pointer hover:shadow-md transition-all`);
-            card.onclick = () => this.showTipoModal(tipo.key, tipo.label);
-            
-            const number = createElement('div', `text-2xl font-bold text-${tipo.color}-600`, count.toString());
-            const label = createElement('div', `text-sm text-${tipo.color}-700`, tipo.label);
-            
-            card.appendChild(number);
-            card.appendChild(label);
-            grid.appendChild(card);
-        });
-        
-        container.appendChild(grid);
-    }
-
-    createHistoricoSection() {
-        const section = createElement('div', 'space-y-8');
-        
-        const tipos = [
-            { key: 'lanche', label: 'Lanches', icon: 'users' },
-            { key: 'perda', label: 'Perdas', icon: 'trending-down' },
-            { key: 'sobra', label: 'Sobras', icon: 'package' },
-            { key: 'transferencia', label: 'Transferências', icon: 'arrow-right-left' },
-            { key: 'estoque', label: 'Estoque', icon: 'warehouse' }
-        ];
-        
-        tipos.forEach(tipo => {
-            const tipoSection = this.createTipoSection(tipo);
-            section.appendChild(tipoSection);
-        });
-        
-        return section;
-    }
-
-    createTipoSection(tipo) {
-        const section = createElement('div', 'bg-white rounded-xl shadow-lg p-6');
-        
-        const header = createElement('div', 'flex items-center justify-between mb-4');
-        const title = createElement('h2', 'text-xl font-bold text-gray-800 flex items-center capitalize');
-        title.appendChild(createIcon(tipo.icon, 'w-6 h-6 mr-2 text-yellow-600'));
-        title.appendChild(document.createTextNode(`Histórico - ${tipo.label}`));
-        
-        const viewAllButton = createElement('button', 'btn btn-info btn-sm');
-        viewAllButton.textContent = 'Ver Todos';
-        viewAllButton.onclick = () => this.showTipoModal(tipo.key, tipo.label);
-        
-        header.appendChild(title);
-        header.appendChild(viewAllButton);
-        
-        const content = createElement('div', `${tipo.key}-content`);
-        
-        section.appendChild(header);
-        section.appendChild(content);
-        
-        this.updateTipoContent(content, tipo.key);
-        
-        return section;
-    }
-
-    updateTipoContent(container, tipo) {
-        const filteredLancamentos = filterManager.filterData(lancamentosManager.getLancamentosByTipo(tipo));
-        const recentLancamentos = filteredLancamentos.slice(0, 5); // Mostrar apenas os 5 mais recentes
-        
-        container.innerHTML = '';
-        
-        if (recentLancamentos.length > 0) {
-            const table = this.createLancamentosTable(recentLancamentos, tipo, true);
-            container.appendChild(table);
-        } else {
-            const emptyMessage = createElement('p', 'text-gray-500 text-center py-8', 
-                filterManager.filters.startDate || filterManager.filters.endDate ? 
-                `Nenhum registro de ${tipo} encontrado no período selecionado.` :
-                `Nenhum registro de ${tipo} encontrado.`
-            );
-            container.appendChild(emptyMessage);
-        }
-    }
-
-    createLancamentosTable(lancamentos, tipo, isPreview = false) {
-        const tableContainer = createElement('div', 'overflow-x-auto');
-        const table = createElement('table', 'table');
-        
-        // Header
-        const thead = createElement('thead');
-        const headerRow = createElement('tr');
-        
-        const headers = ['Data/Hora', tipo === 'lanche' ? 'Funcionário' : 'Nome', 'Itens'];
-        if (tipo !== 'estoque') headers.push('Tamanho');
-        if (tipo === 'lanche') headers.push('Suco');
-        if (!isPreview) headers.push('Status', 'Ações');
-        
-        headers.forEach(header => {
-            const th = createElement('th', '', header);
-            headerRow.appendChild(th);
-        });
-        
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-        
-        // Body
-        const tbody = createElement('tbody');
-        
-        lancamentos.forEach(lancamento => {
-            const row = createElement('tr');
-            
-            // Adicionar classe visual baseada no status do visto
-            if (lancamento.visto) {
-                row.classList.add('item-visto');
-            } else {
-                row.classList.add('item-pending');
-            }
-            
-            // Data/Hora
-            const { date, time } = formatDateTime(lancamento.data_hora);
-            const dateCell = createElement('td');
-            const dateDiv = createElement('div', 'text-sm');
-            const dateSpan = createElement('div', 'font-medium', date);
-            const timeSpan = createElement('div', 'text-gray-500', time);
-            dateDiv.appendChild(dateSpan);
-            dateDiv.appendChild(timeSpan);
-            dateCell.appendChild(dateDiv);
-            row.appendChild(dateCell);
-            
-            // Nome/Funcionário
-            const nameCell = createElement('td', 'font-medium', lancamento.funcionario || lancamento.nome);
-            row.appendChild(nameCell);
-            
-            // Itens
-            const itemsCell = createElement('td');
-            const itemsDiv = createElement('div', 'space-y-1');
-            Object.entries(lancamento.itens).forEach(([item, qty]) => {
-                const itemDiv = createElement('div', 'text-sm');
-                const itemName = tipo === 'estoque' ? item : formatSalgadoName(item, lancamento.tamanho);
-                itemDiv.textContent = `${itemName}: ${qty}`;
-                itemsDiv.appendChild(itemDiv);
-            });
-            itemsCell.appendChild(itemsDiv);
-            row.appendChild(itemsCell);
-            
-            // Tamanho
-            if (tipo !== 'estoque') {
-                const tamanhoCell = createElement('td');
-                const badge = createElement('span', 'badge badge-info', lancamento.tamanho);
-                tamanhoCell.appendChild(badge);
-                row.appendChild(tamanhoCell);
-            }
-            
-            // Suco
-            if (tipo === 'lanche') {
-                const sucoCell = createElement('td');
-                if (lancamento.suco && lancamento.quantidade_suco) {
-                    const sucoDiv = createElement('div', 'text-sm', `${lancamento.suco}: ${lancamento.quantidade_suco}`);
-                    sucoCell.appendChild(sucoDiv);
-                } else {
-                    sucoCell.innerHTML = '<span class="text-gray-400">-</span>';
-                }
-                row.appendChild(sucoCell);
-            }
-            
-            // Status e Ações (apenas se não for preview)
-            if (!isPreview) {
-                // Status
-                const statusCell = createElement('td');
-                const statusIndicator = createElement('div', 'status-indicator');
-                const dot = createElement('div', `status-dot ${lancamento.visto ? 'status-dot-success' : 'status-dot-pending'}`);
-                const text = createElement('span', 'text-sm', lancamento.visto ? 'Visto' : 'Pendente');
-                statusIndicator.appendChild(dot);
-                statusIndicator.appendChild(text);
-                statusCell.appendChild(statusIndicator);
-                row.appendChild(statusCell);
-                
-                // Ações
-                const actionsCell = createElement('td');
-                const actionsDiv = createElement('div', 'flex gap-2');
-                
-                const vistoButton = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-warning' : 'btn-success'}`);
-                vistoButton.textContent = lancamento.visto ? 'Remover Visto' : 'Dar Visto';
-                vistoButton.onclick = async () => {
-                    // Prevent multiple clicks
-                    if (vistoButton.disabled) return;
-                    
-                    const originalText = vistoButton.textContent;
-                    vistoButton.disabled = true;
-                    vistoButton.textContent = 'Processando...';
-                    
-                    try {
-                        const success = await lancamentosManager.toggleVisto(lancamento.id);
-                        
-                        if (success) {
-                            // Update local lancamento object immediately
-                            const newVistoState = !lancamento.visto;
-                            lancamento.visto = newVistoState;
-                            
-                            // Update row styling immediately
-                            if (newVistoState) {
-                                row.classList.remove('item-pending');
-                                row.classList.add('item-visto');
-                                vistoButton.textContent = 'Remover Visto';
-                                vistoButton.className = 'btn btn-sm btn-warning';
-                            } else {
-                                row.classList.remove('item-visto');
-                                row.classList.add('item-pending');
-                                vistoButton.textContent = 'Dar Visto';
-                                vistoButton.className = 'btn btn-sm btn-success';
-                            }
-                            
-                            // Update status indicator immediately
-                            const statusDotElement = statusCell.querySelector('.status-dot');
-                            const statusTextElement = statusCell.querySelector('span');
-                            if (statusDotElement) {
-                                statusDotElement.className = `status-dot ${newVistoState ? 'status-dot-success' : 'status-dot-pending'}`;
-                            }
-                            if (statusTextElement) {
-                                statusTextElement.textContent = newVistoState ? 'Visto' : 'Pendente';
-                            }
-                            
-                            // Add visual feedback animation
-                            row.classList.add('item-updated');
-                            setTimeout(() => {
-                                row.classList.remove('item-updated');
-                            }, 800);
-                            
-                        } else {
-                            // Restore original state on failure
-                            vistoButton.textContent = originalText;
-                        }
-                    } catch (error) {
-                        console.error('Erro ao alterar visto:', error);
-                        vistoButton.textContent = originalText;
-                        toast.error('Erro ao alterar visto!');
-                    } finally {
-                        vistoButton.disabled = false;
-                    }
-                };
-                
-                const editButton = createElement('button', 'btn btn-info btn-sm');
-                editButton.textContent = 'Editar';
-                editButton.onclick = () => {
-                    // Prevent multiple clicks
-                    if (editButton.disabled) return;
-                    editButton.disabled = true;
-                    editButton.textContent = 'Abrindo...';
-                    
-                    setTimeout(() => {
-                        this.editLancamento(lancamento);
-                        editButton.disabled = false;
-                        editButton.textContent = 'Editar';
-                    }, 100);
-                };
-                
-                const deleteButton = createElement('button', 'btn btn-danger btn-sm');
-                deleteButton.textContent = 'Excluir';
-                deleteButton.onclick = async () => {
-                    if (deleteButton.disabled) return;
-                    
-                    if (!confirm('Tem certeza que deseja excluir este lançamento?')) {
-                        return;
-                    }
-                    
-                    deleteButton.disabled = true;
-                    deleteButton.textContent = 'Excluindo...';
-                    
-                    try {
-                        const success = await lancamentosManager.deleteLancamento(lancamento.id);
-                        
-                        if (success) {
-                            // Update local data and animate row removal
-                            const index = lancamentosManager.lancamentos?.findIndex(l => l.id === lancamento.id);
-                            if (index !== -1) {
-                                lancamentosManager.lancamentos.splice(index, 1);
-                            }
-                            
-                            row.classList.add('item-removing');
-                            setTimeout(() => {
-                                if (row.parentNode) {
-                                    row.parentNode.removeChild(row);
-                                }
-                            }, 300);
-                        } else {
-                            deleteButton.disabled = false;
-                            deleteButton.textContent = 'Excluir';
-                        }
-                    } catch (error) {
-                        console.error('Erro ao excluir lançamento:', error);
-                        deleteButton.disabled = false;
-                        deleteButton.textContent = 'Excluir';
-                        toast.error('Erro ao excluir lançamento!');
-                        }
-                };
-                
-                actionsDiv.appendChild(vistoButton);
-                actionsDiv.appendChild(editButton);
-                actionsDiv.appendChild(deleteButton);
-                actionsCell.appendChild(actionsDiv);
-                row.appendChild(actionsCell);
-            }
-            
-            tbody.appendChild(row);
-        });
-        
-        table.appendChild(tbody);
-        tableContainer.appendChild(table);
-        
-        return tableContainer;
-    }
-
-    addVisualIndicatorToRows(tbody, lancamentos) {
-        const rows = tbody.querySelectorAll('tr');
-        rows.forEach((row, index) => {
-            if (lancamentos[index] && lancamentos[index].visto) {
-                row.classList.add('item-visto');
-            }
-        });
-    }
-
-    updateAllVistoInstances(lancamentoId, newVistoState) {
-        // Find all table rows with this lancamento ID and update them
-        const allTables = document.querySelectorAll('table.table');
-        
-        allTables.forEach(table => {
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                // Find the row that corresponds to this lancamento
-                const vistoButton = row.querySelector('button');
-                if (vistoButton && (
-                    (newVistoState && vistoButton.textContent === 'Dar Visto') ||
-                    (!newVistoState && vistoButton.textContent === 'Remover Visto')
-                )) {
-                    // This might be the same lancamento, update it
-                    const statusCell = row.querySelector('.status-indicator')?.parentElement;
-                    
-                    // Update row styling
-                    if (newVistoState) {
-                        row.classList.remove('item-pending');
-                        row.classList.add('item-visto');
-                        vistoButton.textContent = 'Remover Visto';
-                        vistoButton.className = 'btn btn-sm btn-warning';
-                    } else {
-                        row.classList.remove('item-visto');
-                        row.classList.add('item-pending');
-                        vistoButton.textContent = 'Dar Visto';
-                        vistoButton.className = 'btn btn-sm btn-success';
-                    }
-                    
-                    // Update status indicator
-                    if (statusCell) {
-                        const statusDotElement = statusCell.querySelector('.status-dot');
-                        const statusTextElement = statusCell.querySelector('span');
-                        if (statusDotElement) {
-                            statusDotElement.className = `status-dot ${newVistoState ? 'status-dot-success' : 'status-dot-pending'}`;
-                        }
-                        if (statusTextElement) {
-                            statusTextElement.textContent = newVistoState ? 'Visto' : 'Pendente';
-                        }
-                    }
-                    
-                    // Add visual feedback
-                    row.classList.add('item-updated');
-                    setTimeout(() => {
-                        row.classList.remove('item-updated');
-                    }, 800);
-                }
-            });
-        });
-    }
-
-    showTipoModal(tipo, label) {
-        const filteredLancamentos = filterManager.filterData(lancamentosManager.getLancamentosByTipo(tipo));
-        
-        const modalBody = createElement('div');
-        
-        // Filtro específico do modal
-        const modalFilter = createElement('div', 'mb-4 p-4 bg-gray-50 rounded-lg');
-        const filterTitle = createElement('h3', 'font-medium mb-2', 'Filtro de Datas');
-        
-        const filterInputs = createElement('div', 'grid grid-cols-2 gap-4');
-        
-        const startInput = createElement('input', 'form-input');
-        startInput.type = 'date';
-        startInput.value = filterManager.filters.startDate;
-        
-        const endInput = createElement('input', 'form-input');
-        endInput.type = 'date';
-        endInput.value = filterManager.filters.endDate;
-        
-        const updateModalContent = () => {
-            const newFiltered = lancamentosManager.getLancamentosByTipo(tipo).filter(item => {
-                return isDateInRange(item.data_hora, startInput.value, endInput.value);
-            });
-            
-            const tableContainer = modalBody.querySelector('.table-container');
-            if (tableContainer) {
-                tableContainer.innerHTML = '';
-                if (newFiltered.length > 0) {
-                    const table = this.createLancamentosTable(newFiltered, tipo, false);
-                    tableContainer.appendChild(table);
-                } else {
-                    const emptyMessage = createElement('p', 'text-gray-500 text-center py-8', 'Nenhum registro encontrado no período selecionado.');
-                    tableContainer.appendChild(emptyMessage);
-                }
-            }
+    getTypeColor(tipo) {
+        const colors = {
+            'lanche': 'green',
+            'perda': 'red',
+            'sobra': 'orange',
+            'transferencia': 'blue',
+            'estoque': 'purple'
         };
-        
-        startInput.onchange = updateModalContent;
-        endInput.onchange = updateModalContent;
-        
-        filterInputs.appendChild(startInput);
-        filterInputs.appendChild(endInput);
-        modalFilter.appendChild(filterTitle);
-        modalFilter.appendChild(filterInputs);
-        
-        // Tabela
-        const tableContainer = createElement('div', 'table-container');
-        if (filteredLancamentos.length > 0) {
-            const table = this.createLancamentosTable(filteredLancamentos, tipo, false);
-            tableContainer.appendChild(table);
-        } else {
-            const emptyMessage = createElement('p', 'text-gray-500 text-center py-8', 'Nenhum registro encontrado.');
-            tableContainer.appendChild(emptyMessage);
-        }
-        
-        modalBody.appendChild(modalFilter);
-        modalBody.appendChild(tableContainer);
-        
-        const modalContent = modal.createModal(`${label} - Histórico Completo`, modalBody);
-        modal.show(modalContent, { size: 'large' });
+        return colors[tipo] || 'gray';
     }
 
-    showResumoModal() {
-        const filteredLancamentos = filterManager.filterData(lancamentosManager.lancamentos);
-        
-        const modalBody = createElement('div');
-        
-        // Estatísticas detalhadas
-        const statsContainer = createElement('div', 'space-y-6');
-        
-        // Resumo por tipo
-        const tiposContainer = createElement('div');
-        const tiposTitle = createElement('h3', 'text-lg font-semibold mb-4', 'Resumo por Tipo');
-        const tiposGrid = createElement('div', 'grid grid-cols-2 md:grid-cols-5 gap-4 mb-6');
-        
-        const tipos = [
-            { key: 'lanche', label: 'Lanches', color: 'green' },
-            { key: 'perda', label: 'Perdas', color: 'red' },
-            { key: 'sobra', label: 'Sobras', color: 'orange' },
-            { key: 'transferencia', label: 'Transferências', color: 'blue' },
-            { key: 'estoque', label: 'Estoque', color: 'purple' }
-        ];
-        
-        tipos.forEach(tipo => {
-            const count = filteredLancamentos.filter(l => l.tipo === tipo.key).length;
-            const card = createElement('div', `text-center p-4 bg-${tipo.color}-50 rounded-lg`);
-            const number = createElement('div', `text-2xl font-bold text-${tipo.color}-600`, count.toString());
-            const label = createElement('div', `text-sm text-${tipo.color}-700`, tipo.label);
-            card.appendChild(number);
-            card.appendChild(label);
-            tiposGrid.appendChild(card);
-        });
-        
-        tiposContainer.appendChild(tiposTitle);
-        tiposContainer.appendChild(tiposGrid);
-        
-        // Top produtos com perdas/sobras
-        const topProdutos = this.getFilteredStatistics(filteredLancamentos);
-        if (topProdutos.length > 0) {
-            const produtosContainer = createElement('div');
-            const produtosTitle = createElement('h3', 'text-lg font-semibold mb-4', 'Top Produtos (Perdas + Sobras)');
-            const produtosList = createElement('div', 'space-y-2');
-            
-            topProdutos.slice(0, 5).forEach(([produto, stats]) => {
-                const item = createElement('div', 'flex justify-between items-center p-3 bg-gray-50 rounded-lg');
-                const name = createElement('span', 'font-medium', produto);
-                const total = createElement('span', 'font-bold text-red-600', stats.total.toString());
-                item.appendChild(name);
-                item.appendChild(total);
-                produtosList.appendChild(item);
-            });
-            
-            produtosContainer.appendChild(produtosTitle);
-            produtosContainer.appendChild(produtosList);
-            statsContainer.appendChild(produtosContainer);
-        }
-        
-        statsContainer.appendChild(tiposContainer);
-        modalBody.appendChild(statsContainer);
-        
-        const modalContent = modal.createModal('Resumo Detalhado do Período', modalBody);
-        modal.show(modalContent, { size: 'large' });
-    }
-
-    editLancamento(lancamento) {
-        // Close current modal first
-        modal.hide();
-        
-        // Small delay to ensure modal is closed
-        setTimeout(() => {
-            lancamentosManager.editLancamento(lancamento);
-            app.showLancamentoModal(lancamento.tipo);
-        }, 300);
-    }
-
-    updateContent(statsSection, resumoSection, historicoSection) {
-        // Atualizar estatísticas
-        const statsContent = statsSection.querySelector('.stats-content');
-        this.updateStatsContent(statsContent);
-        
-        // Atualizar resumo
-        const resumoContent = resumoSection.querySelector('.resumo-content');
-        this.updateResumoContent(resumoContent);
-        
-        // Atualizar histórico
-        const tipos = ['lanche', 'perda', 'sobra', 'transferencia', 'estoque'];
-        tipos.forEach(tipo => {
-            const content = historicoSection.querySelector(`.${tipo}-content`);
-            if (content) {
-                this.updateTipoContent(content, tipo);
-            }
-        });
-    }
-
-    updateAllContent() {
-        // Recarregar dados e atualizar toda a interface
-        (async () => {
-            await lancamentosManager.loadLancamentos();
-            const statsSection = document.querySelector('.stats-content')?.closest('.bg-white');
-            const resumoSection = document.querySelector('.resumo-content')?.closest('.bg-white');
-            const historicoSection = document.querySelector('.space-y-8');
-            
-            if (statsSection && resumoSection && historicoSection) {
-                this.updateContent(statsSection, resumoSection, historicoSection);
-            }
-        })();
+    logout() {
+        this.isAuthenticated = false;
+        this.currentView = 'dashboard';
+        toast.success('Logout realizado com sucesso!');
+        app.showLancamentos();
     }
 }
 
