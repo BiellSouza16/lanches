@@ -452,10 +452,11 @@ class AreaRestrita {
                 
                 const vistoButton = createElement('button', `btn btn-sm ${lancamento.visto ? 'btn-warning' : 'btn-success'}`);
                 vistoButton.textContent = lancamento.visto ? 'Remover Visto' : 'Dar Visto';
-                vistoButton.onclick = () => {
+                vistoButton.onclick = async () => {
                     // Prevent multiple clicks
                     if (vistoButton.disabled) return;
                     
+                    const originalText = vistoButton.textContent;
                     vistoButton.disabled = true;
                     vistoButton.textContent = 'Processando...';
                     
@@ -526,7 +527,7 @@ class AreaRestrita {
                 
                 const deleteButton = createElement('button', 'btn btn-danger btn-sm');
                 deleteButton.textContent = 'Excluir';
-                deleteButton.onclick = () => {
+                deleteButton.onclick = async () => {
                     if (deleteButton.disabled) return;
                     
                     if (!confirm('Tem certeza que deseja excluir este lançamento?')) {
@@ -536,12 +537,14 @@ class AreaRestrita {
                     deleteButton.disabled = true;
                     deleteButton.textContent = 'Excluindo...';
                     
-                    lancamentosManager.deleteLancamento(lancamento.id).then((success) => {
+                    try {
+                        const success = await lancamentosManager.deleteLancamento(lancamento.id);
+                        
                         if (success) {
                             // Update local data and animate row removal
-                            const index = this.lancamentos?.findIndex(l => l.id === lancamento.id);
+                            const index = lancamentosManager.lancamentos?.findIndex(l => l.id === lancamento.id);
                             if (index !== -1) {
-                                this.lancamentos.splice(index, 1);
+                                lancamentosManager.lancamentos.splice(index, 1);
                             }
                             
                             row.classList.add('item-removing');
@@ -554,7 +557,12 @@ class AreaRestrita {
                             deleteButton.disabled = false;
                             deleteButton.textContent = 'Excluir';
                         }
-                    });
+                    } catch (error) {
+                        console.error('Erro ao excluir lançamento:', error);
+                        deleteButton.disabled = false;
+                        deleteButton.textContent = 'Excluir';
+                        toast.error('Erro ao excluir lançamento!');
+                        }
                 };
                 
                 actionsDiv.appendChild(vistoButton);
@@ -738,7 +746,8 @@ class AreaRestrita {
 
     updateAllContent() {
         // Recarregar dados e atualizar toda a interface
-        lancamentosManager.loadLancamentos().then(() => {
+        (async () => {
+            await lancamentosManager.loadLancamentos();
             const statsSection = document.querySelector('.stats-content')?.closest('.bg-white');
             const resumoSection = document.querySelector('.resumo-content')?.closest('.bg-white');
             const historicoSection = document.querySelector('.space-y-8');
@@ -746,7 +755,7 @@ class AreaRestrita {
             if (statsSection && resumoSection && historicoSection) {
                 this.updateContent(statsSection, resumoSection, historicoSection);
             }
-        });
+        })();
     }
 }
 
