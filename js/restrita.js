@@ -614,6 +614,92 @@ class AreaRestrita {
             this.updateAllContent();
         }
     }
+
+    showEditModal(lancamento) {
+        // Fechar modal atual antes de abrir o de edição
+        modal.hide();
+        
+        // Pequeno delay para garantir que o modal anterior foi fechado
+        setTimeout(() => {
+            lancamentosManager.editLancamento(lancamento);
+            app.showLancamentoModal(lancamento.tipo);
+        }, 300);
+    }
+
+    showDeleteModal(lancamento) {
+        // Fechar modal atual antes de abrir o de confirmação
+        modal.hide();
+        
+        // Pequeno delay para garantir que o modal anterior foi fechado
+        setTimeout(() => {
+            this.createDeleteConfirmationModal(lancamento);
+        }, 300);
+    }
+    
+    createDeleteConfirmationModal(lancamento) {
+        const { date, time } = formatDateTime(lancamento.data_hora);
+        
+        const body = createElement('div', 'text-center space-y-4');
+        
+        const icon = createElement('div', 'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4');
+        icon.appendChild(createIcon('trash-2', 'w-8 h-8 text-red-600'));
+        
+        const title = createElement('h3', 'text-lg font-semibold text-gray-800 mb-2', 'Confirmar Exclusão');
+        const message = createElement('p', 'text-gray-600 mb-4', 
+            `Tem certeza que deseja excluir este lançamento de ${lancamento.tipo}?`);
+        
+        const details = createElement('div', 'bg-gray-50 p-3 rounded-lg text-left text-sm');
+        details.innerHTML = `
+            <p><strong>Data:</strong> ${date} às ${time}</p>
+            <p><strong>Responsável:</strong> ${lancamento.funcionario || lancamento.nome}</p>
+        `;
+        
+        body.appendChild(icon);
+        body.appendChild(title);
+        body.appendChild(message);
+        body.appendChild(details);
+        
+        const footer = createElement('div', 'flex gap-3');
+        
+        const cancelButton = createElement('button', 'btn bg-gray-300 text-gray-700 hover:bg-gray-400 flex-1');
+        cancelButton.textContent = 'Cancelar';
+        cancelButton.onclick = () => modal.hide();
+        
+        const deleteButton = createElement('button', 'btn btn-danger flex-1');
+        deleteButton.textContent = 'Excluir';
+        deleteButton.onclick = async () => {
+            deleteButton.disabled = true;
+            deleteButton.textContent = 'Excluindo...';
+            
+            const success = await lancamentosManager.deleteLancamento(lancamento.id);
+            if (success) {
+                modal.hide();
+                this.updateAllContent();
+            } else {
+                deleteButton.disabled = false;
+                deleteButton.textContent = 'Excluir';
+            }
+        };
+        
+        footer.appendChild(cancelButton);
+        footer.appendChild(deleteButton);
+        
+        const modalContent = modal.createModal('Confirmar Exclusão', body, footer);
+        modal.show(modalContent);
+    }
+
+    showEditModalOld(lancamento) {
+        lancamentosManager.editLancamento(lancamento);
+        app.showLancamentoModal(lancamento.tipo);
+    }
+
+    showDeleteModalOld(lancamento) {
+        const confirmDelete = confirm(`Tem certeza que deseja excluir este lançamento de ${lancamento.tipo}?`);
+        if (confirmDelete) {
+            this.deleteLancamento(lancamento.id);
+        }
+    }
+
     createLancamentosView() {
         const container = createElement('div', 'space-y-6');
         
