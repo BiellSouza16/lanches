@@ -17,6 +17,7 @@ const tamanhos = ['35g', '20g'];
 
 const itensEstoque = [
     'AÇÚCAR',
+    'ÁGUA SANITÁRIA',
     'ÁLCOOL',
     'CATCHUP',
     'COPO',
