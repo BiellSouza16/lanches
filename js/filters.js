@@ -1,4 +1,4 @@
-// Sistema de Filtros
+// Sistema de Filtros Melhorado
 class FilterManager {
     constructor() {
         this.filters = {
@@ -7,17 +7,37 @@ class FilterManager {
             showFilter: false
         };
         this.callbacks = [];
+        this.debounceTimeout = null;
+        
+        // Configurar filtro padrão para o mês atual
+        this.setCurrentMonthFilter();
+    }
+
+    setCurrentMonthFilter() {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        this.filters.startDate = firstDay.toISOString().split('T')[0];
+        this.filters.endDate = lastDay.toISOString().split('T')[0];
     }
 
     setDateRange(startDate, endDate) {
         this.filters.startDate = startDate;
         this.filters.endDate = endDate;
+        
+        // Atualização em tempo real sem debounce
         this.notifyCallbacks();
     }
 
     clearFilters() {
         this.filters.startDate = '';
         this.filters.endDate = '';
+        this.notifyCallbacks();
+    }
+
+    resetToCurrentMonth() {
+        this.setCurrentMonthFilter();
         this.notifyCallbacks();
     }
 
@@ -42,7 +62,13 @@ class FilterManager {
     }
 
     notifyCallbacks() {
-        this.callbacks.forEach(callback => callback(this.filters));
+        this.callbacks.forEach(callback => {
+            try {
+                callback(this.filters);
+            } catch (error) {
+                console.error('Erro no callback do filtro:', error);
+            }
+        });
     }
 
     filterData(data, dateField = 'data_hora') {
@@ -93,8 +119,8 @@ class FilterManager {
         startDateInput.type = 'date';
         startDateInput.value = this.filters.startDate;
         startDateInput.onchange = (e) => {
-            this.filters.startDate = e.target.value;
-            this.notifyCallbacks();
+            this.setDateRange(e.target.value, this.filters.endDate);
+            this.updateStatusText(statusText);
         };
         
         startDateGroup.appendChild(startDateLabel);
@@ -107,8 +133,8 @@ class FilterManager {
         endDateInput.type = 'date';
         endDateInput.value = this.filters.endDate;
         endDateInput.onchange = (e) => {
-            this.filters.endDate = e.target.value;
-            this.notifyCallbacks();
+            this.setDateRange(this.filters.startDate, e.target.value);
+            this.updateStatusText(statusText);
         };
         
         endDateGroup.appendChild(endDateLabel);
@@ -118,7 +144,16 @@ class FilterManager {
         inputsContainer.appendChild(endDateGroup);
         
         // Botões de ação
-        const actionsContainer = createElement('div', 'flex gap-3');
+        const actionsContainer = createElement('div', 'flex gap-3 flex-wrap');
+        
+        const currentMonthButton = createElement('button', 'btn btn-info');
+        currentMonthButton.textContent = 'Mês Atual';
+        currentMonthButton.onclick = () => {
+            this.resetToCurrentMonth();
+            startDateInput.value = this.filters.startDate;
+            endDateInput.value = this.filters.endDate;
+            this.updateStatusText(statusText);
+        };
         
         const clearButton = createElement('button', 'btn btn-secondary');
         clearButton.textContent = 'Limpar Filtro';
@@ -126,12 +161,13 @@ class FilterManager {
             this.clearFilters();
             startDateInput.value = '';
             endDateInput.value = '';
-            statusText.textContent = 'Nenhum filtro aplicado';
+            this.updateStatusText(statusText);
         };
         
-        const statusText = createElement('div', 'flex-1 text-sm text-gray-600 flex items-center');
+        const statusText = createElement('div', 'flex-1 text-sm text-gray-600 flex items-center min-w-0');
         this.updateStatusText(statusText);
         
+        actionsContainer.appendChild(currentMonthButton);
         actionsContainer.appendChild(clearButton);
         actionsContainer.appendChild(statusText);
         
@@ -153,8 +189,10 @@ class FilterManager {
                 text += ` até ${new Date(this.filters.endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
             }
             statusElement.textContent = text;
+            statusElement.className = 'flex-1 text-sm text-blue-600 flex items-center min-w-0 font-medium';
         } else {
-            statusElement.textContent = 'Nenhum filtro aplicado';
+            statusElement.textContent = 'Todos os registros';
+            statusElement.className = 'flex-1 text-sm text-gray-600 flex items-center min-w-0';
         }
     }
 
@@ -172,6 +210,39 @@ class FilterManager {
         if (this.filters.showFilter) {
             this.addFilterControls(container, onApply);
         }
+    }
+
+    // Métodos para estatísticas por período
+    getMonthlyStats(data, dateField = 'data_hora') {
+        const monthlyStats = {};
+        
+        data.forEach(item => {
+            const date = new Date(item[dateField]);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            
+            if (!monthlyStats[monthKey]) {
+                monthlyStats[monthKey] = [];
+            }
+            monthlyStats[monthKey].push(item);
+        });
+        
+        return monthlyStats;
+    }
+
+    getDailyStats(data, dateField = 'data_hora') {
+        const dailyStats = {};
+        
+        data.forEach(item => {
+            const date = new Date(item[dateField]);
+            const dayKey = date.toISOString().split('T')[0];
+            
+            if (!dailyStats[dayKey]) {
+                dailyStats[dayKey] = [];
+            }
+            dailyStats[dayKey].push(item);
+        });
+        
+        return dailyStats;
     }
 }
 
