@@ -10,6 +10,7 @@ class LancamentosManager {
         this.selectedTamanho = '35g';
         this.funcionario = '';
         this.nome = '';
+        this.observacao = '';
         this.editingLancamento = null;
     }
 
@@ -37,6 +38,7 @@ class LancamentosManager {
         this.quantidadeSuco = 0;
         this.funcionario = '';
         this.nome = '';
+        this.observacao = '';
         this.selectedTamanho = '35g';
         this.editingLancamento = null;
     }
@@ -148,6 +150,7 @@ class LancamentosManager {
                 suco: this.selectedSuco || undefined,
                 quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
                 tamanho: tipo !== 'estoque' ? this.selectedTamanho : undefined,
+                observacao: (tipo === 'perda' || tipo === 'sobra') ? this.observacao : undefined,
                 data_hora: new Date().toISOString(),
                 visto: false
             };
@@ -215,6 +218,7 @@ class LancamentosManager {
                 suco: this.selectedSuco || undefined,
                 quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
                 tamanho: this.editingLancamento.tipo !== 'estoque' ? this.selectedTamanho : undefined,
+                observacao: (this.editingLancamento.tipo === 'perda' || this.editingLancamento.tipo === 'sobra') ? this.observacao : undefined,
                 data_hora: this.editingLancamento.data_hora // Manter a data editada
             };
 
@@ -350,6 +354,7 @@ class LancamentosManager {
         this.selectedSuco = lancamento.suco || '';
         this.quantidadeSuco = lancamento.quantidade_suco || 0;
         this.selectedTamanho = lancamento.tamanho || '35g';
+        this.observacao = lancamento.observacao || '';
     }
 
     updateEditingDateTime(newDateTime) {
