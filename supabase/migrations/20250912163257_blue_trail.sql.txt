@@ -1,0 +1,21 @@
+/*
+  # Add observacao field to Lanches table
+
+  1. Changes to Table
+    - Add `observacao` column to `Lanches` table for perdas and sobras explanations
+    - Set as nullable text field
+
+  2. Security
+    - No changes to RLS policies needed
+*/
+
+-- Add observacao column to Lanches table
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'Lanches' AND column_name = 'observacao'
+  ) THEN
+    ALTER TABLE "Lanches" ADD COLUMN observacao text;
+  END IF;
+END $$;
