@@ -4,6 +4,7 @@ class LancamentosManager {
         this.lancamentos = [];
         this.loading = false;
         this.selectedItems = {};
+        this.selectedDualSizeItems = {}; // Para perda, sobra e transferência
         this.selectedSuco = '';
         this.quantidadeSuco = 0;
         this.selectedTamanho = '35g';
@@ -31,6 +32,7 @@ class LancamentosManager {
 
     resetForm() {
         this.selectedItems = {};
+        this.selectedDualSizeItems = {};
         this.selectedSuco = '';
         this.quantidadeSuco = 0;
         this.funcionario = '';
@@ -77,19 +79,33 @@ class LancamentosManager {
         }
     }
 
+    updateDualSizeItemQuantity(itemKey, change) {
+        this.selectedDualSizeItems[itemKey] = Math.max(0, (this.selectedDualSizeItems[itemKey] || 0) + change);
+    }
+
     async submitLancamento(tipo) {
         if (this.editingLancamento) {
             return this.updateLancamento();
         }
 
-        // Filtrar itens com quantidade zero antes de salvar
-        const filteredItems = {};
-        Object.entries(this.selectedItems).forEach(([item, quantity]) => {
-            if (quantity > 0) {
-                filteredItems[item] = quantity;
-            }
-        });
-        this.selectedItems = filteredItems;
+        let finalItems = {};
+        
+        // Para lanche e estoque, usar o sistema atual
+        if (tipo === 'lanche' || tipo === 'estoque') {
+            // Filtrar itens com quantidade zero antes de salvar
+            Object.entries(this.selectedItems).forEach(([item, quantity]) => {
+                if (quantity > 0) {
+                    finalItems[item] = quantity;
+                }
+            });
+        } else {
+            // Para perda, sobra e transferência, usar o novo sistema dual
+            Object.entries(this.selectedDualSizeItems).forEach(([itemKey, quantity]) => {
+                if (quantity > 0) {
+                    finalItems[itemKey] = quantity;
+                }
+            });
+        }
 
         // Validações
         if (tipo === 'lanche') {
@@ -114,7 +130,7 @@ class LancamentosManager {
                 return false;
             }
             
-            const totalItems = Object.values(this.selectedItems).reduce((sum, qty) => sum + qty, 0);
+            const totalItems = Object.values(finalItems).reduce((sum, qty) => sum + qty, 0);
             if (totalItems === 0 && this.quantidadeSuco === 0) {
                 toast.error('Selecione pelo menos um item!');
                 return false;
@@ -128,7 +144,7 @@ class LancamentosManager {
                 tipo: tipo,
                 funcionario: tipo === 'lanche' ? this.funcionario : undefined,
                 nome: tipo !== 'lanche' ? this.nome : undefined,
-                itens: this.selectedItems,
+                itens: finalItems,
                 suco: this.selectedSuco || undefined,
                 quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
                 tamanho: tipo !== 'estoque' ? this.selectedTamanho : undefined,
@@ -171,14 +187,23 @@ class LancamentosManager {
             }
         }
 
-        // Filtrar itens com quantidade zero antes de atualizar
-        const filteredItems = {};
-        Object.entries(this.selectedItems).forEach(([item, quantity]) => {
-            if (quantity > 0) {
-                filteredItems[item] = quantity;
-            }
-        });
-        this.selectedItems = filteredItems;
+        let finalItems = {};
+        
+        // Para lanche e estoque, usar o sistema atual
+        if (this.editingLancamento.tipo === 'lanche' || this.editingLancamento.tipo === 'estoque') {
+            Object.entries(this.selectedItems).forEach(([item, quantity]) => {
+                if (quantity > 0) {
+                    finalItems[item] = quantity;
+                }
+            });
+        } else {
+            // Para perda, sobra e transferência, usar o novo sistema dual
+            Object.entries(this.selectedDualSizeItems).forEach(([itemKey, quantity]) => {
+                if (quantity > 0) {
+                    finalItems[itemKey] = quantity;
+                }
+            });
+        }
 
         this.loading = true;
 
@@ -186,7 +211,7 @@ class LancamentosManager {
             const updatedLancamento = {
                 funcionario: this.editingLancamento.tipo === 'lanche' ? this.funcionario : undefined,
                 nome: this.editingLancamento.tipo !== 'lanche' ? this.nome : undefined,
-                itens: this.selectedItems,
+                itens: finalItems,
                 suco: this.selectedSuco || undefined,
                 quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
                 tamanho: this.editingLancamento.tipo !== 'estoque' ? this.selectedTamanho : undefined,
@@ -303,7 +328,25 @@ class LancamentosManager {
         this.editingLancamento = lancamento;
         this.funcionario = lancamento.funcionario || '';
         this.nome = lancamento.nome || '';
-        this.selectedItems = { ...lancamento.itens };
+        
+        // Verificar se é o novo formato (com tamanhos separados) ou antigo
+        if (lancamento.tipo === 'lanche' || lancamento.tipo === 'estoque') {
+            this.selectedItems = { ...lancamento.itens };
+        } else {
+            // Para perda, sobra e transferência, verificar se já está no novo formato
+            const hasNewFormat = Object.keys(lancamento.itens).some(key => key.includes('_'));
+            
+            if (hasNewFormat) {
+                this.selectedDualSizeItems = { ...lancamento.itens };
+            } else {
+                // Converter formato antigo para novo (assumir 35g para compatibilidade)
+                this.selectedDualSizeItems = {};
+                Object.entries(lancamento.itens).forEach(([item, quantity]) => {
+                    this.selectedDualSizeItems[`${item}_${lancamento.tamanho || '35g'}`] = quantity;
+                });
+            }
+        }
+        
         this.selectedSuco = lancamento.suco || '';
         this.quantidadeSuco = lancamento.quantidade_suco || 0;
         this.selectedTamanho = lancamento.tamanho || '35g';
