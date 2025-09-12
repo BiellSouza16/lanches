@@ -177,6 +177,23 @@ class App {
         nameGroup.appendChild(nameInput);
         container.appendChild(nameGroup);
         
+        // Campo Observação (apenas para perda e sobra)
+        if (tipo === 'perda' || tipo === 'sobra') {
+            const observacaoGroup = createElement('div');
+            const observacaoLabel = createElement('label', 'form-label', `Motivo da ${tipo === 'perda' ? 'Perda' : 'Sobra'}`);
+            const observacaoTextarea = createElement('textarea', 'form-input');
+            observacaoTextarea.rows = 3;
+            observacaoTextarea.placeholder = `Explique o motivo da ${tipo === 'perda' ? 'perda' : 'sobra'}...`;
+            observacaoTextarea.value = lancamentosManager.observacao || '';
+            observacaoTextarea.oninput = (e) => {
+                lancamentosManager.observacao = e.target.value;
+            };
+            
+            observacaoGroup.appendChild(observacaoLabel);
+            observacaoGroup.appendChild(observacaoTextarea);
+            container.appendChild(observacaoGroup);
+        }
+        
         // Para lanche, manter o sistema atual
         if (tipo === 'lanche') {
             // Seleção de Tamanho
