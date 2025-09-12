@@ -177,8 +177,9 @@ class App {
         nameGroup.appendChild(nameInput);
         container.appendChild(nameGroup);
         
-        // Seleção de Tamanho (não para estoque e lanche)
-        if (tipo !== 'estoque' && tipo !== 'lanche') {
+        // Para lanche, manter o sistema atual
+        if (tipo === 'lanche') {
+            // Seleção de Tamanho
             const tamanhoGroup = createElement('div');
             const tamanhoLabel = createElement('label', 'form-label', 'Tamanho');
             const tamanhoContainer = createElement('div', 'flex gap-4');
@@ -198,18 +199,32 @@ class App {
             tamanhoGroup.appendChild(tamanhoLabel);
             tamanhoGroup.appendChild(tamanhoContainer);
             container.appendChild(tamanhoGroup);
+            
+            // Lista de Itens para lanche
+            const itemsGroup = createElement('div');
+            const itemsLabel = createElement('label', 'form-label', 'Salgados');
+            const itemsGrid = createElement('div', 'items-grid grid grid-cols-1 md:grid-cols-2 gap-3');
+            
+            this.updateItemsList(itemsGrid, tipo);
+            
+            itemsGroup.appendChild(itemsLabel);
+            itemsGroup.appendChild(itemsGrid);
+            container.appendChild(itemsGroup);
+        } else if (tipo === 'estoque') {
+            // Lista de Itens de Estoque
+            const itemsGroup = createElement('div');
+            const itemsLabel = createElement('label', 'form-label', 'Itens de Estoque');
+            const itemsGrid = createElement('div', 'items-grid grid grid-cols-1 md:grid-cols-2 gap-3');
+            
+            this.updateItemsList(itemsGrid, tipo);
+            
+            itemsGroup.appendChild(itemsLabel);
+            itemsGroup.appendChild(itemsGrid);
+            container.appendChild(itemsGroup);
+        } else {
+            // Para perda, sobra e transferência - novo sistema com ambos tamanhos
+            this.createDualSizeItemsSection(container, tipo);
         }
-        
-        // Lista de Itens
-        const itemsGroup = createElement('div');
-        const itemsLabel = createElement('label', 'form-label', tipo === 'estoque' ? 'Itens de Estoque' : 'Salgados');
-        const itemsGrid = createElement('div', 'items-grid grid grid-cols-1 md:grid-cols-2 gap-3');
-        
-        this.updateItemsList(itemsGrid, tipo);
-        
-        itemsGroup.appendChild(itemsLabel);
-        itemsGroup.appendChild(itemsGrid);
-        container.appendChild(itemsGroup);
         
         // Sucos (apenas para lanche)
         if (tipo === 'lanche') {
@@ -226,6 +241,190 @@ class App {
         return container;
     }
 
+    createDualSizeItemsSection(container, tipo) {
+        // Seção para salgados de 35g
+        const items35Group = createElement('div', 'space-y-4');
+        const items35Label = createElement('label', 'form-label text-lg font-semibold text-gray-800', 'Salgados 35g');
+        const items35Grid = createElement('div', 'items-grid-35g grid grid-cols-1 md:grid-cols-2 gap-3');
+        
+        this.updateDualSizeItemsList(items35Grid, tipo, '35g');
+        
+        items35Group.appendChild(items35Label);
+        items35Group.appendChild(items35Grid);
+        container.appendChild(items35Group);
+        
+        // Seção para salgados de 20g (Mini)
+        const items20Group = createElement('div', 'space-y-4');
+        const items20Label = createElement('label', 'form-label text-lg font-semibold text-gray-800', 'Mini Salgados 20g');
+        const items20Grid = createElement('div', 'items-grid-20g grid grid-cols-1 md:grid-cols-2 gap-3');
+        
+        this.updateDualSizeItemsList(items20Grid, tipo, '20g');
+        
+        items20Group.appendChild(items20Label);
+        items20Group.appendChild(items20Grid);
+        container.appendChild(items20Group);
+        
+        // Resumo/Contador
+        if (['perda', 'sobra', 'transferencia'].includes(tipo)) {
+            const resumoGroup = this.createResumoSection(tipo);
+            container.appendChild(resumoGroup);
+        }
+    }
+
+    updateDualSizeItemsList(container, tipo, tamanho) {
+        container.innerHTML = '';
+        
+        salgados.forEach(item => {
+            const itemKey = `${item}_${tamanho}`;
+            const itemContainer = createElement('div', 'flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-all duration-200');
+            
+            const itemName = createElement('span', 'text-sm font-medium text-gray-700');
+            itemName.textContent = formatSalgadoName(item, tamanho);
+            
+            const controls = createElement('div', 'flex items-center gap-2');
+            
+            const minusButton = createElement('button', 'w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 hover:scale-110 transition-all duration-200 active:scale-95');
+            minusButton.type = 'button';
+            minusButton.appendChild(createIcon('minus', 'w-4 h-4'));
+            minusButton.onclick = () => {
+                lancamentosManager.updateDualSizeItemQuantity(itemKey, -1);
+                this.updateDualSizeItemQuantity(controls, itemKey);
+                this.updateResumoSection(container.closest('.modal-body'), tipo);
+            };
+            minusButton.disabled = !lancamentosManager.selectedDualSizeItems[itemKey];
+            
+            const quantityInput = createElement('input', 'w-16 text-center font-medium border border-gray-300 rounded px-1 py-1 text-sm');
+            quantityInput.type = 'number';
+            quantityInput.min = '0';
+            quantityInput.value = (lancamentosManager.selectedDualSizeItems[itemKey] || 0).toString();
+            quantityInput.onchange = (e) => {
+                const newValue = Math.max(0, parseInt(e.target.value) || 0);
+                lancamentosManager.selectedDualSizeItems[itemKey] = newValue;
+                this.updateDualSizeItemQuantity(controls, itemKey);
+                this.updateResumoSection(container.closest('.modal-body'), tipo);
+            };
+            
+            const plusButton = createElement('button', 'w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-full hover:bg-green-600 hover:scale-110 transition-all duration-200 active:scale-95');
+            plusButton.type = 'button';
+            plusButton.appendChild(createIcon('plus', 'w-4 h-4'));
+            plusButton.onclick = () => {
+                lancamentosManager.updateDualSizeItemQuantity(itemKey, 1);
+                this.updateDualSizeItemQuantity(controls, itemKey);
+                this.updateResumoSection(container.closest('.modal-body'), tipo);
+            };
+            
+            controls.appendChild(minusButton);
+            controls.appendChild(quantityInput);
+            controls.appendChild(plusButton);
+            
+            itemContainer.appendChild(itemName);
+            itemContainer.appendChild(controls);
+            container.appendChild(itemContainer);
+        });
+        
+        setTimeout(() => initializeLucideIcons(), 0);
+    }
+
+    updateDualSizeItemQuantity(controlsContainer, itemKey) {
+        const quantityInput = controlsContainer.querySelector('input');
+        const minusButton = controlsContainer.querySelector('button:first-child');
+        
+        quantityInput.value = (lancamentosManager.selectedDualSizeItems[itemKey] || 0).toString();
+        minusButton.disabled = !lancamentosManager.selectedDualSizeItems[itemKey];
+    }
+
+    createResumoSection(tipo) {
+        const resumoGroup = createElement('div', 'bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6 animate-slideUp');
+        
+        const resumoHeader = createElement('div', 'flex items-center mb-3');
+        resumoHeader.appendChild(createIcon('clipboard-list', 'w-5 h-5 text-blue-600 mr-2'));
+        const resumoTitle = createElement('h3', 'text-lg font-semibold text-blue-800', 'Resumo do Lançamento');
+        resumoHeader.appendChild(resumoTitle);
+        
+        const resumoContent = createElement('div', 'resumo-content space-y-2');
+        
+        resumoGroup.appendChild(resumoHeader);
+        resumoGroup.appendChild(resumoContent);
+        
+        // Atualizar conteúdo inicial
+        this.updateResumoContent(resumoContent, tipo);
+        
+        return resumoGroup;
+    }
+
+    updateResumoSection(modalBody, tipo) {
+        const resumoContent = modalBody.querySelector('.resumo-content');
+        if (resumoContent) {
+            this.updateResumoContent(resumoContent, tipo);
+        }
+    }
+
+    updateResumoContent(resumoContent, tipo) {
+        resumoContent.innerHTML = '';
+        
+        const items35g = {};
+        const items20g = {};
+        let total35g = 0;
+        let total20g = 0;
+        
+        // Separar itens por tamanho
+        Object.entries(lancamentosManager.selectedDualSizeItems || {}).forEach(([itemKey, quantity]) => {
+            if (quantity > 0) {
+                const [item, tamanho] = itemKey.split('_');
+                if (tamanho === '35g') {
+                    items35g[item] = quantity;
+                    total35g += quantity;
+                } else if (tamanho === '20g') {
+                    items20g[item] = quantity;
+                    total20g += quantity;
+                }
+            }
+        });
+        
+        // Mostrar resumo de 35g
+        if (Object.keys(items35g).length > 0) {
+            const section35g = createElement('div', 'bg-white p-3 rounded border-l-4 border-yellow-500');
+            const title35g = createElement('h4', 'font-semibold text-gray-800 mb-2', `Salgados 35g (Total: ${total35g})`);
+            section35g.appendChild(title35g);
+            
+            Object.entries(items35g).forEach(([item, quantity]) => {
+                const itemRow = createElement('div', 'flex justify-between text-sm text-gray-600');
+                itemRow.innerHTML = `<span>${item}</span><span>${quantity} unidades</span>`;
+                section35g.appendChild(itemRow);
+            });
+            
+            resumoContent.appendChild(section35g);
+        }
+        
+        // Mostrar resumo de 20g
+        if (Object.keys(items20g).length > 0) {
+            const section20g = createElement('div', 'bg-white p-3 rounded border-l-4 border-orange-500');
+            const title20g = createElement('h4', 'font-semibold text-gray-800 mb-2', `Mini Salgados 20g (Total: ${total20g})`);
+            section20g.appendChild(title20g);
+            
+            Object.entries(items20g).forEach(([item, quantity]) => {
+                const itemRow = createElement('div', 'flex justify-between text-sm text-gray-600');
+                itemRow.innerHTML = `<span>MINI ${item}</span><span>${quantity} unidades</span>`;
+                section20g.appendChild(itemRow);
+            });
+            
+            resumoContent.appendChild(section20g);
+        }
+        
+        // Mostrar total geral
+        const totalGeral = total35g + total20g;
+        if (totalGeral > 0) {
+            const totalSection = createElement('div', 'bg-blue-100 p-3 rounded border-l-4 border-blue-500');
+            const totalText = createElement('div', 'font-bold text-blue-800 text-center');
+            totalText.textContent = `Total Geral: ${totalGeral} unidades`;
+            totalSection.appendChild(totalText);
+            resumoContent.appendChild(totalSection);
+        } else {
+            const emptyMessage = createElement('div', 'text-gray-500 text-center italic');
+            emptyMessage.textContent = 'Nenhum item selecionado';
+            resumoContent.appendChild(emptyMessage);
+        }
+    }
     updateTamanhoButtons(container) {
         const buttons = container.querySelectorAll('button');
         buttons.forEach(button => {
