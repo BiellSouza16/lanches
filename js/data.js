@@ -26,6 +26,7 @@ const itensEstoque = [
     'ESPONJA',
     'GUARDANAPO',
     'MAIONESE',
+    'ÓLEO',
     'PAPEL TOALHA',
     'SABÃO EM PÓ',
     'SACO DE 1KG',
