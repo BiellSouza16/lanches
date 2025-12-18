@@ -247,4 +247,4 @@ class FilterManager {
 }
 
 // Instância global do filtro
-const filterManager = new FilterManager();
+export const filterManager = new FilterManager();
