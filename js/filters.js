@@ -1,3 +1,5 @@
+export const filterManager = new FilterManager();
+
 // Sistema de Filtros Melhorado
 class FilterManager {
     constructor() {
