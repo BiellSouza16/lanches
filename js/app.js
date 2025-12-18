@@ -1,3 +1,5 @@
+import { supabase } from './supabase-config.js';
+
 // Aplicação Principal
 class App {
     constructor() {
