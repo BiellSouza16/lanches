@@ -7,10 +7,7 @@ import './modals.js';
 import './filters.js';
 import './lancamentos.js';
 import './restrita.js';
-
 // resto do seu código do app.js aqui embaixo
-
-import { supabase } from './supabase-config.js';
 
 // Aplicação Principal
 class App {
