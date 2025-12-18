@@ -1,3 +1,5 @@
+export const lancamentosManager = new LancamentosManager();
+
 // Gerenciamento de Lançamentos
 class LancamentosManager {
     constructor() {
