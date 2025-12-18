@@ -1,3 +1,5 @@
+console.log('APP.JS CARREGOU');
+
 import { supabase } from './supabase-config.js';
 
 import './data.js';
