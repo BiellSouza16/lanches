@@ -1,4 +1,4 @@
-console.log('APP.JS CARREGOU');
+import { lancamentosManager } from './lancamentos.js';
 
 import { supabase } from './supabase-config.js';
 
