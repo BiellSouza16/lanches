@@ -1,3 +1,5 @@
+import { filterManager } from './filters.js';
+
 // Área Restrita
 class AreaRestrita {
     constructor() {
