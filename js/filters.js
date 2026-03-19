@@ -1,5 +1,3 @@
-export const filterManager = new FilterManager();
-
 // Sistema de Filtros Melhorado
 class FilterManager {
     constructor() {
@@ -249,4 +247,4 @@ class FilterManager {
 }
 
 // Instância global do filtro
-export const filterManager = new FilterManager();
+const filterManager = new FilterManager();
