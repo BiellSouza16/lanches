@@ -772,12 +772,11 @@ const app = new App();
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
 async function ensureVistoField() {
     try {
-        // Tentar fazer uma query que usa o campo visto
-        async function ensureVistoField() {
-    try {
         const supabase = window.supabaseClient;
 
-        const { data, error } = await supabase
+        if (!supabase) return;
+
+        const { error } = await supabase
             .from('Lanches')
             .select('visto')
             .limit(1);
