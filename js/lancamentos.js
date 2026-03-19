@@ -24,8 +24,9 @@ class LancamentosManager {
                 throw new Error('Supabase não inicializado');
             }
 
-            const { data, error } = await supabase
-                .from('Lanches')
+            const supabase = window.supabaseClient || window.getSupabase?.();
+            
+            const { data, error } = await supabase.from('Lanches')
                 .select('*')
                 .order('data_hora', { ascending: false });
 
