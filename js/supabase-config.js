@@ -16,7 +16,9 @@ window.getSupabase = function () {
         return null;
     }
 
-    window.supabase = window.supabase.createClient(
+    const supabaseLib = window.supabase; // biblioteca CDN
+
+    window.supabase = supabaseLib.createClient(
         supabaseUrl,
         supabaseAnonKey
     );
