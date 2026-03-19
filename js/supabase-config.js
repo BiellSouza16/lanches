@@ -1,28 +1,26 @@
-window.supabaseClient = null;
+// Supabase Configuration
+console.log('Inicializando Supabase...');
 
-function initSupabase() {
-    if (window.supabaseClient !== null) {
-    return window.supabaseClient;
-}
+window.getSupabase = function() {
 
-    try {
-        if (!window.supabase || !window.supabase.createClient) {
-            console.error('Supabase library não carregado corretamente');
-            return null;
-        }
+    if (window.supabaseClient) {
+        console.log('Supabase já existe');
+        return window.supabaseClient;
+    }
 
-        const supabaseUrl = 'https://vlnpsieyfiwnaxniqpma.supabase.co';
+    const supabaseUrl = 'https://vlnpsieyfiwnaxniqpma.supabase.co';
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbnBzaWV5Zml3bmF4bmlxcG1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyNzYxNzEsImV4cCI6MjA2OTg1MjE3MX0.2Aa6tIrQrGsleDy5UeoAVYBdKXrWpBMyWZoy_RAJaKE';
 
-       window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-        console.log('Supabase inicializado com sucesso');
-        return window.supabaseClient;
-    } catch (error) {
-        console.error('Erro ao inicializar Supabase:', error);
+    if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Credenciais do Supabase não configuradas');
         return null;
     }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    initSupabase();
-});
+    window.supabaseClient = window.supabase.createClient(
+        supabaseUrl,
+        supabaseAnonKey
+    );
+
+    console.log('Supabase inicializado com sucesso');
+    return window.supabaseClient;
+};
