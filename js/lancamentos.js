@@ -15,8 +15,6 @@ class LancamentosManager {
     }
 
     async loadLancamentos() {
-        try {
-            async loadLancamentos() {
     try {
         const supabase = window.supabaseClient;
 
