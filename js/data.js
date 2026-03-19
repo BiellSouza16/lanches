@@ -17,7 +17,6 @@ const tamanhos = ['35g', '20g'];
 
 const itensEstoque = [
     'AÇÚCAR',
-    'ÁGUA SANITÁRIA',
     'ÁLCOOL',
     'CATCHUP',
     'COPO',
@@ -26,7 +25,6 @@ const itensEstoque = [
     'ESPONJA',
     'GUARDANAPO',
     'MAIONESE',
-    'ÓLEO',
     'PAPEL TOALHA',
     'SABÃO EM PÓ',
     'SACO DE 1KG',
