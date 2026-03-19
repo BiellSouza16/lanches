@@ -7,36 +7,34 @@ class RealtimeSync {
     }
 
     async initialize() {
-        try {
-            if (!supabase) {
-                initSupabase();
-            }
+    try {
+        const supabase = window.getSupabase();
 
-            if (!supabase) {
-                console.error('Supabase não inicializado - tentando novamente em 2s');
-                setTimeout(() => this.initialize(), 2000);
-                return;
-            }
-
-            if (this.channel) {
-                this.channel.unsubscribe();
-            }
-
-            this.channel = supabase
-                .channel('public:Lanches')
-                .on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: 'Lanches' },
-                    (payload) => this.handleDatabaseChange(payload)
-                )
-                .subscribe();
-
-            console.log('Realtime sync inicializado com sucesso');
-        } catch (error) {
-            console.error('Erro ao inicializar Realtime:', error);
+        if (!supabase) {
+            console.error('Supabase não inicializado - tentando novamente em 2s');
             setTimeout(() => this.initialize(), 2000);
+            return;
         }
+
+        if (this.channel) {
+            this.channel.unsubscribe();
+        }
+
+        this.channel = supabase
+            .channel('public:Lanches')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'Lanches' },
+                (payload) => this.handleDatabaseChange(payload)
+            )
+            .subscribe();
+
+        console.log('Realtime sync inicializado com sucesso');
+    } catch (error) {
+        console.error('Erro ao inicializar Realtime:', error);
+        setTimeout(() => this.initialize(), 2000);
     }
+}
 
     handleDatabaseChange(payload) {
         const changeId = `${payload.eventType}_${payload.new?.id || payload.old?.id}_${Date.now()}`;
