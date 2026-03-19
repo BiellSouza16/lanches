@@ -1,16 +1,3 @@
-import { lancamentosManager } from './lancamentos.js';
-
-import { supabase } from './supabase-config.js';
-
-import './data.js';
-import './utils.js';
-import './toast.js';
-import './modals.js';
-import './filters.js';
-import './lancamentos.js';
-import './restrita.js';
-// resto do seu código do app.js aqui embaixo
-
 // Aplicação Principal
 class App {
     constructor() {
@@ -20,11 +7,30 @@ class App {
     }
 
     async init() {
-        await lancamentosManager.loadLancamentos();
-        this.showLancamentos();
-        
-        // Inicializar ícones
-        setTimeout(() => initializeLucideIcons(), 100);
+        try {
+            // Garantir que Supabase está inicializado
+            if (!supabase) {
+                initSupabase();
+            }
+
+            // Aguardar um pouco para garantir inicialização
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (!supabase) {
+                console.error('Falha ao inicializar Supabase');
+                toast.error('Erro ao conectar com o banco de dados!');
+                return;
+            }
+
+            await lancamentosManager.loadLancamentos();
+            this.showLancamentos();
+
+            // Inicializar ícones
+            setTimeout(() => initializeLucideIcons(), 100);
+        } catch (error) {
+            console.error('Erro na inicialização:', error);
+            toast.error('Erro ao inicializar aplicação!');
+        }
     }
 
     showLancamentos() {
