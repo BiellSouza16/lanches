@@ -787,22 +787,4 @@ async function ensureVistoField() {
         console.log('Verificação do campo visto:', error);
     }
 }
-            .select('visto')
-            .limit(1);
-        
-        // Se não der erro, o campo já existe
-        if (!error) return;
-        
-        // Se der erro, tentar adicionar o campo
-        console.log('Campo visto não encontrado, tentando adicionar...');
-        
-        // Nota: Em um ambiente real, isso seria feito via migration
-        // Aqui estamos apenas verificando se o campo existe
-        
-    } catch (error) {
-        console.log('Verificação do campo visto:', error);
-    }
-}
-
-// Verificar campo visto ao inicializar
 ensureVistoField();
