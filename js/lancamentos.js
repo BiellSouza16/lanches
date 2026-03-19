@@ -1,5 +1,3 @@
-export const lancamentosManager = new LancamentosManager();
-
 // Gerenciamento de Lançamentos
 class LancamentosManager {
     constructor() {
@@ -18,6 +16,14 @@ class LancamentosManager {
 
     async loadLancamentos() {
         try {
+            if (!supabase) {
+                initSupabase();
+            }
+
+            if (!supabase) {
+                throw new Error('Supabase não inicializado');
+            }
+
             const { data, error } = await supabase
                 .from('Lanches')
                 .select('*')
@@ -25,6 +31,7 @@ class LancamentosManager {
 
             if (error) throw error;
             this.lancamentos = data || [];
+            console.log('Lançamentos carregados:', this.lancamentos.length);
             return this.lancamentos;
         } catch (error) {
             console.error('Erro ao carregar lançamentos:', error);
@@ -92,8 +99,17 @@ class LancamentosManager {
             return this.updateLancamento();
         }
 
+        if (!supabase) {
+            initSupabase();
+        }
+
+        if (!supabase) {
+            toast.error('Erro: Supabase não inicializado!');
+            return false;
+        }
+
         let finalItems = {};
-        
+
         // Para lanche e estoque, usar o sistema atual
         if (tipo === 'lanche' || tipo === 'estoque') {
             // Filtrar itens com quantidade zero antes de salvar
@@ -117,13 +133,13 @@ class LancamentosManager {
                 toast.error('Nome do funcionário é obrigatório!');
                 return false;
             }
-            
+
             const totalItems = this.getTotalItems();
             if (totalItems === 0) {
                 toast.error('Selecione pelo menos um item!');
                 return false;
             }
-            
+
             if (totalItems > 5) {
                 toast.error('Máximo de 5 itens permitidos no lanche!');
                 return false;
@@ -133,7 +149,7 @@ class LancamentosManager {
                 toast.error('Nome é obrigatório!');
                 return false;
             }
-            
+
             const totalItems = Object.values(finalItems).reduce((sum, qty) => sum + qty, 0);
             if (totalItems === 0 && this.quantidadeSuco === 0) {
                 toast.error('Selecione pelo menos um item!');
@@ -165,7 +181,7 @@ class LancamentosManager {
 
             toast.success('Lançamento registrado com sucesso!');
             this.resetForm();
-            await this.loadLancamentos();
+            // Não precisa recarregar manualmente - Realtime fará isso
             return true;
         } catch (error) {
             console.error('Erro ao registrar lançamento:', error);
@@ -178,6 +194,15 @@ class LancamentosManager {
 
     async updateLancamento() {
         if (!this.editingLancamento) return false;
+
+        if (!supabase) {
+            initSupabase();
+        }
+
+        if (!supabase) {
+            toast.error('Erro: Supabase não inicializado!');
+            return false;
+        }
 
         // Validações básicas
         if (this.editingLancamento.tipo === 'lanche') {
@@ -193,7 +218,7 @@ class LancamentosManager {
         }
 
         let finalItems = {};
-        
+
         // Para lanche e estoque, usar o sistema atual
         if (this.editingLancamento.tipo === 'lanche' || this.editingLancamento.tipo === 'estoque') {
             Object.entries(this.selectedItems).forEach(([item, quantity]) => {
@@ -233,16 +258,8 @@ class LancamentosManager {
 
             toast.success('Lançamento atualizado com sucesso!');
             this.resetForm();
-            await this.loadLancamentos();
-            
-            // Trigger real-time update for restricted area
-            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
-                // Small delay to ensure the update is processed
-                setTimeout(() => {
-                    window.areaRestrita.updateAllContent();
-                }, 100);
-            }
-            
+            // Não precisa recarregar manualmente - Realtime fará isso
+
             return true;
         } catch (error) {
             console.error('Erro ao atualizar lançamento:', error);
@@ -255,6 +272,14 @@ class LancamentosManager {
 
     async deleteLancamento(id) {
         try {
+            if (!supabase) {
+                initSupabase();
+            }
+
+            if (!supabase) {
+                throw new Error('Supabase não inicializado');
+            }
+
             const { error } = await supabase
                 .from('Lanches')
                 .delete()
@@ -262,19 +287,9 @@ class LancamentosManager {
 
             if (error) throw error;
 
-            // Update local data immediately
-            this.lancamentos = this.lancamentos.filter(l => l.id !== id);
-
             toast.success('Lançamento excluído com sucesso!');
-            
-            // Trigger real-time update for restricted area
-            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
-                // Small delay to ensure the update is processed
-                setTimeout(() => {
-                    window.areaRestrita.updateAllContent();
-                }, 100);
-            }
-            
+            // Não precisa atualizar manualmente - Realtime fará isso
+
             return true;
         } catch (error) {
             console.error('Erro ao excluir lançamento:', error);
@@ -285,14 +300,28 @@ class LancamentosManager {
 
     async toggleVisto(id) {
         try {
-            // Find current lancamento in local data
-            const lancamentoIndex = this.lancamentos.findIndex(l => l.id === id);
-            if (lancamentoIndex === -1) {
-                console.error('Lançamento não encontrado:', id);
-                return false;
+            if (!supabase) {
+                initSupabase();
             }
-            
-            const lancamento = this.lancamentos[lancamentoIndex];
+
+            if (!supabase) {
+                throw new Error('Supabase não inicializado');
+            }
+
+            // Buscar lançamento atual
+            const { data: currentData, error: fetchError } = await supabase
+                .from('Lanches')
+                .select('visto')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (fetchError) throw fetchError;
+
+            if (!currentData) {
+                throw new Error('Lançamento não encontrado');
+            }
+
+            const lancamento = currentData;
             const newVistoState = !lancamento.visto;
 
             // Make the API call
@@ -303,25 +332,14 @@ class LancamentosManager {
 
             if (error) throw error;
 
-            // Update local data after successful API call
-            lancamento.visto = newVistoState;
-            this.lancamentos[lancamentoIndex] = lancamento;
-
             // Show success toast
             if (newVistoState) {
                 toast.success('✓ Visto adicionado com sucesso!');
             } else {
                 toast.warning('Visto removido!');
             }
-            
-            // Trigger real-time update for restricted area
-            if (window.areaRestrita && window.areaRestrita.isAuthenticated) {
-                // Small delay to ensure the update is processed
-                setTimeout(() => {
-                    window.areaRestrita.updateAllContent();
-                }, 100);
-            }
-            
+            // Não precisa atualizar manualmente - Realtime fará isso
+
             return true;
         } catch (error) {
             console.error('Erro ao alterar visto:', error);
