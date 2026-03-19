@@ -9,9 +9,13 @@ class App {
     async init() {
         try {
             // Garantir que Supabase está inicializado
-            if (!supabase) {
-                initSupabase();
-            }
+            const supabase = window.supabaseClient || window.getSupabase?.();
+
+if (!supabase) {
+    console.error('Falha ao inicializar Supabase');
+    toast.error('Erro ao conectar com o banco de dados!');
+    return;
+}
 
             // Aguardar um pouco para garantir inicialização
             await new Promise(resolve => setTimeout(resolve, 500));
