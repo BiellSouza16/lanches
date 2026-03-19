@@ -773,8 +773,21 @@ const app = new App();
 async function ensureVistoField() {
     try {
         // Tentar fazer uma query que usa o campo visto
+        async function ensureVistoField() {
+    try {
+        const supabase = window.supabaseClient;
+
         const { data, error } = await supabase
             .from('Lanches')
+            .select('visto')
+            .limit(1);
+
+        if (!error) return;
+
+    } catch (error) {
+        console.log('Verificação do campo visto:', error);
+    }
+}
             .select('visto')
             .limit(1);
         
