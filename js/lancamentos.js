@@ -422,6 +422,26 @@ class LancamentosManager {
             .slice(0, 10);
     }
 }
-
 // Instância global do gerenciador de lançamentos
+
 const lancamentosManager = new LancamentosManager();
+
+render() {
+    const container = document.getElementById('main-content');
+
+    if (!container) return;
+
+    if (this.lancamentos.length === 0) {
+        container.innerHTML = '<p>Nenhum lançamento encontrado</p>';
+        return;
+    }
+
+    container.innerHTML = this.lancamentos.map(l => `
+        <div style="border:1px solid #ccc; padding:10px; margin:10px; border-radius:8px;">
+            <strong>${l.tipo}</strong><br>
+            ${l.funcionario || l.nome || ''}<br>
+            ${new Date(l.data_hora).toLocaleString()}<br>
+            Visto: ${l.visto ? '✔️' : '❌'}
+        </div>
+    `).join('');
+}
