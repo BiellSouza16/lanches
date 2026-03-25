@@ -781,6 +781,7 @@ lancamentosManager.render();
 
 // Inicializar aplicação
 const app = new App();
+app.init();
 
 realtimeSync.addCallback(() => {
     if (lancamentosManager.render) {
