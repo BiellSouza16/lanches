@@ -48,8 +48,9 @@ lancamentosManager.render();
         this.activeSection = 'lancamentos';
         this.mainContent.innerHTML = '';
         this.mainContent.appendChild(this.createLancamentosPage());
-        setTimeout(() => initializeLucideIcons(), 0);
-    }
+        setTimeout(() => {
+    lancamentosManager.render();
+}, 0);
 
     showRestrita() {
         this.activeSection = 'restrita';
