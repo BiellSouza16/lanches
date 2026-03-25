@@ -62,7 +62,6 @@ class LancamentosManager {
             console.error('Erro ao carregar:', error);
         }
     }
-}
 
     resetForm() {
         this.selectedItems = {};
