@@ -24,6 +24,12 @@ class App {
         // ✅ Mostra a tela
         this.showLancamentos();
 
+        realtimeSync.addCallback(() => {
+            if (lancamentosManager.render) {
+                lancamentosManager.render();
+    }
+        });
+
         // 🔥 ESSENCIAL: renderizar depois que o DOM foi criado
         setTimeout(() => {
             if (lancamentosManager.render) {
