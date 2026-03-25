@@ -41,15 +41,12 @@ class LancamentosManager {
             lista.appendChild(item);
         });
     }
-}
 
     async loadLancamentos() {
         try {
             const supabase = window.getSupabase();
 
-            if (!supabase) {
-                throw new Error('Supabase não inicializado');
-            }
+            if (!supabase) throw new Error('Supabase não inicializado');
 
             const { data, error } = await supabase
                 .from('Lanches')
@@ -60,12 +57,9 @@ class LancamentosManager {
 
             this.lancamentos = data || [];
             console.log('Lançamentos carregados:', this.lancamentos.length);
-            return this.lancamentos;
 
         } catch (error) {
-            console.error('Erro ao carregar lançamentos:', error);
-            toast.error('Erro ao carregar lançamentos!');
-            return [];
+            console.error('Erro ao carregar:', error);
         }
     }
 }
