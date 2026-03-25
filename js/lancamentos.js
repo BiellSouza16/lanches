@@ -43,25 +43,29 @@ class LancamentosManager {
     }
 
     async loadLancamentos() {
-        try {
-            const supabase = window.getSupabase();
+    try {
+        const supabase = window.getSupabase();
 
-            if (!supabase) throw new Error('Supabase não inicializado');
+        if (!supabase) throw new Error('Supabase não inicializado');
 
-            const { data, error } = await supabase
-                .from('Lanches')
-                .select('*')
-                .order('data_hora', { ascending: false });
+        const { data, error } = await supabase
+            .from('Lanches')
+            .select('*')
+            .order('data_hora', { ascending: false });
 
-            if (error) throw error;
+        if (error) throw error;
 
-            this.lancamentos = data || [];
-            console.log('Lançamentos carregados:', this.lancamentos.length);
+        this.lancamentos = data || [];
 
-        } catch (error) {
-            console.error('Erro ao carregar:', error);
-        }
+        console.log('Lançamentos carregados:', this.lancamentos.length);
+
+        // 🔥 ESSA LINHA É A CHAVE
+        this.render();
+
+    } catch (error) {
+        console.error('Erro ao carregar:', error);
     }
+}
 
     resetForm() {
         this.selectedItems = {};
@@ -118,102 +122,54 @@ class LancamentosManager {
     }
 
     async submitLancamento(tipo) {
-        if (this.editingLancamento) {
-            return this.updateLancamento();
-        }
-
-        if (!supabase) {
-            initSupabase();
-        }
-
-        if (!supabase) {
-            toast.error('Erro: Supabase não inicializado!');
-            return false;
-        }
-
-        let finalItems = {};
-
-        // Para lanche e estoque, usar o sistema atual
-        if (tipo === 'lanche' || tipo === 'estoque') {
-            // Filtrar itens com quantidade zero antes de salvar
-            Object.entries(this.selectedItems).forEach(([item, quantity]) => {
-                if (quantity > 0) {
-                    finalItems[item] = quantity;
-                }
-            });
-        } else {
-            // Para perda, sobra e transferência, usar o novo sistema dual
-            Object.entries(this.selectedDualSizeItems).forEach(([itemKey, quantity]) => {
-                if (quantity > 0) {
-                    finalItems[itemKey] = quantity;
-                }
-            });
-        }
-
-        // Validações
-        if (tipo === 'lanche') {
-            if (!this.funcionario.trim()) {
-                toast.error('Nome do funcionário é obrigatório!');
-                return false;
-            }
-
-            const totalItems = this.getTotalItems();
-            if (totalItems === 0) {
-                toast.error('Selecione pelo menos um item!');
-                return false;
-            }
-
-            if (totalItems > 5) {
-                toast.error('Máximo de 5 itens permitidos no lanche!');
-                return false;
-            }
-        } else if (['perda', 'sobra', 'transferencia', 'estoque'].includes(tipo)) {
-            if (!this.nome.trim()) {
-                toast.error('Nome é obrigatório!');
-                return false;
-            }
-
-            const totalItems = Object.values(finalItems).reduce((sum, qty) => sum + qty, 0);
-            if (totalItems === 0 && this.quantidadeSuco === 0) {
-                toast.error('Selecione pelo menos um item!');
-                return false;
-            }
-        }
-
-        this.loading = true;
-
-        try {
-            const lancamento = {
-                tipo: tipo,
-                funcionario: tipo === 'lanche' ? this.funcionario : undefined,
-                nome: tipo !== 'lanche' ? this.nome : undefined,
-                itens: finalItems,
-                suco: this.selectedSuco || undefined,
-                quantidade_suco: this.quantidadeSuco > 0 ? this.quantidadeSuco : undefined,
-                tamanho: tipo !== 'estoque' ? this.selectedTamanho : undefined,
-                observacao: (tipo === 'perda' || tipo === 'sobra') ? this.observacao : undefined,
-                data_hora: new Date().toISOString(),
-                visto: false
-            };
-
-            const { error } = await supabase
-                .from('Lanches')
-                .insert([lancamento]);
-
-            if (error) throw error;
-
-            toast.success('Lançamento registrado com sucesso!');
-            this.resetForm();
-            // Não precisa recarregar manualmente - Realtime fará isso
-            return true;
-        } catch (error) {
-            console.error('Erro ao registrar lançamento:', error);
-            toast.error('Erro ao registrar lançamento!');
-            return false;
-        } finally {
-            this.loading = false;
-        }
+    if (this.editingLancamento) {
+        return this.updateLancamento();
     }
+
+    const supabase = window.getSupabase();
+
+    if (!supabase) {
+        toast.error('Erro: Supabase não inicializado!');
+        return false;
+    }
+
+    let finalItems = {};
+
+    Object.entries(this.selectedItems).forEach(([item, quantity]) => {
+        if (quantity > 0) {
+            finalItems[item] = quantity;
+        }
+    });
+
+    this.loading = true;
+
+    try {
+        const lancamento = {
+            tipo: tipo,
+            funcionario: this.funcionario,
+            itens: finalItems,
+            data_hora: new Date().toISOString(),
+            visto: false
+        };
+
+        const { error } = await supabase
+            .from('Lanches')
+            .insert([lancamento]);
+
+        if (error) throw error;
+
+        toast.success('Lançamento registrado!');
+        this.resetForm();
+        return true;
+
+    } catch (error) {
+        console.error(error);
+        toast.error('Erro ao salvar!');
+        return false;
+    } finally {
+        this.loading = false;
+    }
+}
 
     async updateLancamento() {
         if (!this.editingLancamento) return false;
