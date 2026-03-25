@@ -14,6 +14,36 @@ class LancamentosManager {
         this.editingLancamento = null;
     }
 
+    render() {
+        const container = document.getElementById('main-content');
+        if (!container) return;
+
+        let lista = document.getElementById('lista-lancamentos');
+
+        if (!lista) {
+            lista = document.createElement('div');
+            lista.id = 'lista-lancamentos';
+            lista.className = 'mt-8 space-y-2';
+            container.appendChild(lista);
+        }
+
+        lista.innerHTML = '';
+
+        this.lancamentos.forEach(l => {
+            const item = document.createElement('div');
+            item.className = 'bg-white p-3 rounded shadow text-sm';
+
+            item.innerHTML = `
+                <strong>${l.tipo}</strong> - 
+                ${l.nome || l.funcionario || '-'} <br>
+                ${new Date(l.data_hora).toLocaleString()}
+            `;
+
+            lista.appendChild(item);
+        });
+    }
+}
+
     async loadLancamentos() {
     try {
         const supabase = window.getSupabase();
@@ -425,23 +455,3 @@ class LancamentosManager {
 // Instância global do gerenciador de lançamentos
 
 const lancamentosManager = new LancamentosManager();
-
-render() {
-    const container = document.getElementById('main-content');
-
-    if (!container) return;
-
-    if (this.lancamentos.length === 0) {
-        container.innerHTML = '<p>Nenhum lançamento encontrado</p>';
-        return;
-    }
-
-    container.innerHTML = this.lancamentos.map(l => `
-        <div style="border:1px solid #ccc; padding:10px; margin:10px; border-radius:8px;">
-            <strong>${l.tipo}</strong><br>
-            ${l.funcionario || l.nome || ''}<br>
-            ${new Date(l.data_hora).toLocaleString()}<br>
-            Visto: ${l.visto ? '✔️' : '❌'}
-        </div>
-    `).join('');
-}
