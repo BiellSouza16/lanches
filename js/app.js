@@ -20,9 +20,10 @@ class App {
 
         // ✅ Carrega os dados
         await lancamentosManager.loadLancamentos();
+this.showLancamentos();
 
-        // ✅ Mostra a tela
-        this.showLancamentos();
+// 🔥 ESSENCIAL
+lancamentosManager.render();
 
         setTimeout(() => {
             lancamentosManager.render();
