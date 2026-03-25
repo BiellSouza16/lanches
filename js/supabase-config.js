@@ -9,14 +9,16 @@ window.getSupabase = function () {
     }
 
     const supabaseUrl = 'https://vlnpsieyfiwnaxniqpma.supabase.co';
-    const supabaseAnonKey = 'SUA_CHAVE_AQUI';
+    const supabaseAnonKey = 'SUA_KEY_AQUI';
 
-    if (!window.supabase) {
-        console.error('Biblioteca do Supabase não carregada');
+    if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Credenciais do Supabase não configuradas');
         return null;
     }
 
-    window.supabaseClient = window.supabase.createClient(
+    const supabaseLib = window.supabase; // biblioteca CDN
+
+    window.supabaseClient = supabaseLib.createClient(
         supabaseUrl,
         supabaseAnonKey
     );
