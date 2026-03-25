@@ -7,35 +7,37 @@ class App {
     }
 
     async init() {
-        try {
-            // Garantir que Supabase está inicializado
-            const supabase = window.supabaseClient || window.getSupabase?.();
+    try {
+        const supabase = window.supabaseClient || window.getSupabase?.();
 
-if (!supabase) {
-    console.error('Falha ao inicializar Supabase');
-    toast.error('Erro ao conectar com o banco de dados!');
-    return;
-}
-
-            // Aguardar um pouco para garantir inicialização
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            if (!supabase) {
-                console.error('Falha ao inicializar Supabase');
-                toast.error('Erro ao conectar com o banco de dados!');
-                return;
-            }
-
-            await lancamentosManager.loadLancamentos();
-            this.showLancamentos();
-
-            // Inicializar ícones
-            setTimeout(() => initializeLucideIcons(), 100);
-        } catch (error) {
-            console.error('Erro na inicialização:', error);
-            toast.error('Erro ao inicializar aplicação!');
+        if (!supabase) {
+            console.error('Falha ao inicializar Supabase');
+            toast.error('Erro ao conectar com o banco de dados!');
+            return;
         }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // ✅ Carrega os dados
+        await lancamentosManager.loadLancamentos();
+
+        // ✅ Mostra a tela
+        this.showLancamentos();
+
+        // 🔥 ESSENCIAL: renderizar depois que o DOM foi criado
+        setTimeout(() => {
+            if (lancamentosManager.render) {
+                lancamentosManager.render();
+            }
+        }, 100);
+
+        setTimeout(() => initializeLucideIcons(), 100);
+
+    } catch (error) {
+        console.error('Erro na inicialização:', error);
+        toast.error('Erro ao inicializar aplicação!');
     }
+}
 
     showLancamentos() {
         this.activeSection = 'lancamentos';
