@@ -27,11 +27,7 @@ class App {
         setTimeout(() => {
             lancamentosManager.render();
         }, 100);
-
-        realtimeSync.addCallback(() => {
-            lancamentosManager.render();
-        });
-
+        
         // 🔥 ESSENCIAL: renderizar depois que o DOM foi criado
         setTimeout(() => {
             if (lancamentosManager.render) {
