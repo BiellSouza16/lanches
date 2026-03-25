@@ -1,10 +1,9 @@
-// Gerenciamento de Lançamentos
 class LancamentosManager {
     constructor() {
         this.lancamentos = [];
         this.loading = false;
         this.selectedItems = {};
-        this.selectedDualSizeItems = {}; // Para perda, sobra e transferência
+        this.selectedDualSizeItems = {};
         this.selectedSuco = '';
         this.quantidadeSuco = 0;
         this.selectedTamanho = '35g';
@@ -45,28 +44,29 @@ class LancamentosManager {
 }
 
     async loadLancamentos() {
-    try {
-        const supabase = window.getSupabase();
+        try {
+            const supabase = window.getSupabase();
 
-        if (!supabase) {
-            throw new Error('Supabase não inicializado');
+            if (!supabase) {
+                throw new Error('Supabase não inicializado');
+            }
+
+            const { data, error } = await supabase
+                .from('Lanches')
+                .select('*')
+                .order('data_hora', { ascending: false });
+
+            if (error) throw error;
+
+            this.lancamentos = data || [];
+            console.log('Lançamentos carregados:', this.lancamentos.length);
+            return this.lancamentos;
+
+        } catch (error) {
+            console.error('Erro ao carregar lançamentos:', error);
+            toast.error('Erro ao carregar lançamentos!');
+            return [];
         }
-
-        const { data, error } = await supabase
-            .from('Lanches')
-            .select('*')
-            .order('data_hora', { ascending: false });
-
-        if (error) throw error;
-
-        this.lancamentos = data || [];
-        console.log('Lançamentos carregados:', this.lancamentos.length);
-        return this.lancamentos;
-
-    } catch (error) {
-        console.error('Erro ao carregar lançamentos:', error);
-        toast.error('Erro ao carregar lançamentos!');
-        return [];
     }
 }
 
