@@ -16,7 +16,7 @@ class LancamentosManager {
 
     async loadLancamentos() {
     try {
-        const supabase = window.supabaseClient;
+        const supabase = window.getSupabase();
 
         if (!supabase) {
             throw new Error('Supabase não inicializado');
