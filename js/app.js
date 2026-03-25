@@ -783,12 +783,15 @@ lancamentosManager.render();
 const app = new App();
 app.init();
 
+// 🔥 carregar dados (sem await aqui)
+window.lancamentosManager.loadLancamentos();
+
+// 🔥 realtime atualiza a tela
 realtimeSync.addCallback(() => {
-    if (lancamentosManager.render) {
-        lancamentosManager.render();
+    if (window.lancamentosManager) {
+        window.lancamentosManager.render();
     }
 });
-
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
 async function ensureVistoField() {
     try {
