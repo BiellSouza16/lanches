@@ -3,26 +3,24 @@ console.log('Inicializando Supabase...');
 
 window.getSupabase = function () {
 
-    if (window.supabase) {
+    if (window.supabaseClient) {
         console.log('Supabase já existe');
-        return window.supabase;
+        return window.supabaseClient;
     }
 
     const supabaseUrl = 'https://vlnpsieyfiwnaxniqpma.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbnBzaWV5Zml3bmF4bmlxcG1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyNzYxNzEsImV4cCI6MjA2OTg1MjE3MX0.2Aa6tIrQrGsleDy5UeoAVYBdKXrWpBMyWZoy_RAJaKE';
+    const supabaseAnonKey = 'SUA_CHAVE_AQUI';
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-        console.error('Credenciais do Supabase não configuradas');
+    if (!window.supabase) {
+        console.error('Biblioteca do Supabase não carregada');
         return null;
     }
 
-    const supabaseLib = window.supabase; // biblioteca CDN
-
-    window.supabase = supabaseLib.createClient(
+    window.supabaseClient = window.supabase.createClient(
         supabaseUrl,
         supabaseAnonKey
     );
 
     console.log('Supabase inicializado com sucesso');
-    return window.supabase;
+    return window.supabaseClient;
 };
