@@ -779,6 +779,12 @@ class App {
 // Inicializar aplicação
 const app = new App();
 
+realtimeSync.addCallback(() => {
+    if (lancamentosManager.render) {
+        lancamentosManager.render();
+    }
+});
+
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
 async function ensureVistoField() {
     try {
