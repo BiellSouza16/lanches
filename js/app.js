@@ -45,12 +45,17 @@ lancamentosManager.render();
 }
 
     showLancamentos() {
-        this.activeSection = 'lancamentos';
-        this.mainContent.innerHTML = '';
-        this.mainContent.appendChild(this.createLancamentosPage());
-        setTimeout(() => {
-    lancamentosManager.render();
-}, 0);
+    this.activeSection = 'lancamentos';
+    this.mainContent.innerHTML = '';
+
+    this.mainContent.appendChild(this.createLancamentosPage());
+
+    // 🔥 render depois que a tela existe
+    setTimeout(() => {
+        lancamentosManager.render();
+        initializeLucideIcons(); // 👈 NÃO REMOVE ISSO
+    }, 0);
+}
 
     showRestrita() {
         this.activeSection = 'restrita';
