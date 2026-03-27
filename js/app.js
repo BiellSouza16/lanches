@@ -116,8 +116,15 @@ lancamentosManager.render();
         mainContainer.appendChild(header);
         mainContainer.appendChild(cardsGrid);
         mainContainer.appendChild(restrictedArea);
-        container.appendChild(mainContainer);
+        // 🔥 CONTAINER DOS LANÇAMENTOS (IMPORTANTE)
+const listaContainer = createElement('div');
+listaContainer.id = 'lista-lancamentos-container';
+listaContainer.className = 'mt-10 space-y-2';
+
+mainContainer.appendChild(listaContainer);
         
+        container.appendChild(mainContainer);
+
         return container;
     }
 
