@@ -14,8 +14,8 @@ class LancamentosManager {
     }
 
     render() {
-        const container = document.getElementById('main-content');
-        if (!container) return;
+        const container = document.getElementById('lista-lancamentos-container');
+if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
 
         let lista = document.getElementById('lista-lancamentos');
 
