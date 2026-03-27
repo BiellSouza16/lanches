@@ -39,11 +39,6 @@ class App {
     this.activeSection = 'lancamentos';
     this.mainContent.innerHTML = '';
     this.mainContent.appendChild(this.createLancamentosPage());
-
-    setTimeout(async () => {
-        await window.lancamentosManager.loadLancamentos();
-        window.lancamentosManager.render();
-    }, 0);
 }
 
     showRestrita() {
