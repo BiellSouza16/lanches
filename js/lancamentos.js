@@ -53,7 +53,7 @@ class LancamentosManager {
 
     async loadLancamentos() {
     try {
-        const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
+        const supabase = const supabase = window.supabaseClient || (window.getSupabase && window.getSupabase());
 
         if (!supabase) throw new Error('Supabase não inicializado');
 
@@ -137,7 +137,7 @@ class LancamentosManager {
         return this.updateLancamento();
     }
 
-    const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
+    const supabase = const supabase = window.supabaseClient || (window.getSupabase && window.getSupabase());
 
     if (!supabase) {
         toast.error('Erro: Supabase não inicializado!');
@@ -185,7 +185,7 @@ class LancamentosManager {
     async updateLancamento() {
         if (!this.editingLancamento) return false;
 
-        const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
+        const supabase = const supabase = window.supabaseClient || (window.getSupabase && window.getSupabase());
 
 if (!supabase) {
     toast.error('Supabase não inicializado!');
@@ -265,7 +265,7 @@ if (!supabase) {
 
     async deleteLancamento(id) {
         try {
-            const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
+            const supabase = const supabase = window.supabaseClient || (window.getSupabase && window.getSupabase());
 if (!supabase) {
     toast.error('Supabase não inicializado!');
     return false;
@@ -295,7 +295,7 @@ if (!supabase) {
 
     async toggleVisto(id) {
         try {
-            const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
+            const supabase = const supabase = window.supabaseClient || (window.getSupabase && window.getSupabase());
 
 if (!supabase) {
     toast.error('Supabase não inicializado!');
