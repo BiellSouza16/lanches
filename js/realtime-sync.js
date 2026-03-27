@@ -8,8 +8,8 @@ class RealtimeSync {
 
     async initialize() {
     try {
-        const supabase = window.getSupabase();
-
+        const supabase = window.supabaseClient || window.getSupabase?.();
+        
         if (!supabase) {
             console.error('Supabase não inicializado - tentando novamente em 2s');
             setTimeout(() => this.initialize(), 2000);
@@ -141,9 +141,3 @@ class RealtimeSync {
 }
 
 const realtimeSync = new RealtimeSync();
-
-document.addEventListener('DOMContentLoaded', async () => {
-    setTimeout(() => {
-        realtimeSync.initialize();
-    }, 1000);
-});
