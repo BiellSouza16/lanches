@@ -44,7 +44,7 @@ if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
 
     async loadLancamentos() {
     try {
-        const supabase = window.getSupabase();
+        const supabase = window.supabaseClient || window.getSupabase?.();
 
         if (!supabase) throw new Error('Supabase não inicializado');
 
