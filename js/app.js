@@ -13,19 +13,12 @@ class App {
             console.error('Falha ao inicializar Supabase');
             toast.error('Erro ao conectar com o banco de dados!');
             return;
-        }
-        
-        // 🔥 PRIMEIRO cria a tela
-        this.showLancamentos();
+        }this.showLancamentos();
 
-        // 🔥 DEPOIS carrega os dados
-        window.lancamentosManager.render();
-
-        // 🔥 render final garantido
-        lancamentosManager.render();
-
-        setTimeout(() => initializeLucideIcons(), 100);
-
+setTimeout(async () => {
+    await lancamentosManager.loadLancamentos();
+    lancamentosManager.render();
+}, 100);
     } catch (error) {
         console.error('Erro na inicialização:', error);
         toast.error('Erro ao inicializar aplicação!');
