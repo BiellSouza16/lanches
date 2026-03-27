@@ -793,7 +793,7 @@ window.lancamentosManager.loadLancamentos();
 
 // 🔥 realtime atualiza a tela
 realtimeSync.addCallback(() => {
-    if (window.lancamentosManager) {
+    if (window.lancamentosManager && app.activeSection === 'lancamentos') {
         window.lancamentosManager.render();
     }
 });
