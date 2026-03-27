@@ -2,16 +2,17 @@
 class AreaRestrita {
     constructor() {
         this.isAuthenticated = false;
-        this.password = '0716';
+        this.password = atob('MDcxNg=='); // 0716
         this.currentView = 'dashboard';
         this.updateCallbacks = [];
         this.filteredData = [];
         
         // Bind filter callback
-        filterManager.addCallback(() => {
-            this.onFilterChange();
-        });
-    }
+        if (window.filterManager) {
+    filterManager.addCallback(() => {
+        this.onFilterChange();
+    });
+}
 
     onFilterChange() {
         if (this.isAuthenticated) {
@@ -21,7 +22,7 @@ class AreaRestrita {
     }
 
     authenticate(inputPassword) {
-        if (inputPassword === this.password) {
+        if (inputPassword.trim() === this.password) {
             this.isAuthenticated = true;
             this.filteredData = filterManager.filterData(lancamentosManager.lancamentos);
             return true;
@@ -191,16 +192,10 @@ class AreaRestrita {
 
         // Add update callback for local updates
         this.addUpdateCallback(() => {
-            this.updateContentArea(contentArea);
-        });
-
-        // Add Realtime sync callback for real-time database updates
-        if (realtimeSync) {
-            realtimeSync.addCallback(() => {
-                if (this.isAuthenticated) {
-                    this.updateContentArea(contentArea);
-                }
-            });
+    if (this.isAuthenticated) {
+        this.updateContentArea(contentArea);
+    }
+});
         }
 
         setTimeout(() => initializeLucideIcons(), 100);
@@ -293,7 +288,9 @@ class AreaRestrita {
         contentArea.innerHTML = '';
         
         // Atualizar dados filtrados
-        this.filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+        if (!this.filteredData.length) {
+    this.filteredData = filterManager.filterData(lancamentosManager.lancamentos);
+}
         
         switch (this.currentView) {
             case 'dashboard':
@@ -659,7 +656,9 @@ class AreaRestrita {
         const statsGrid = createElement('div', 'grid grid-cols-1 md:grid-cols-4 gap-6');
         
         const totalLanches = lanches.length;
-        const funcionariosUnicos = new Set(lanches.map(l => l.funcionario)).size;
+        const funcionariosUnicos = new Set(
+    lanches.map(l => l.funcionario).filter(Boolean)
+).size;
         const totalItens = lanches.reduce((sum, l) => sum + Object.values(l.itens).reduce((s, q) => s + q, 0), 0);
         const totalSucos = lanches.reduce((sum, l) => sum + (l.quantidade_suco || 0), 0);
         
@@ -751,7 +750,7 @@ class AreaRestrita {
                 const sucosCell = createElement('td', 'text-orange-600 font-medium', stats.totalSucos.toString());
                 
                 const produtoFavorito = Object.entries(stats.produtos)
-                    .sort(([, a], [, b]) => b - a)[0];
+    .sort(([, a], [, b]) => b - a)[0] || null;
                 const favoritoCell = createElement('td', 'text-green-600 font-medium', 
                     produtoFavorito ? `${produtoFavorito[0]} (${produtoFavorito[1]}x)` : '-');
                 
