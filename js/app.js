@@ -17,7 +17,6 @@ class App {
 
 setTimeout(async () => {
     await lancamentosManager.loadLancamentos();
-    lancamentosManager.render();
 }, 100);
     } catch (error) {
         console.error('Erro na inicialização:', error);
@@ -29,6 +28,8 @@ setTimeout(async () => {
     this.activeSection = 'lancamentos';
     this.mainContent.innerHTML = '';
     this.mainContent.appendChild(this.createLancamentosPage());
+    container.appendChild(mainContainer);
+    return container; // 🔥 ESSA LINHA FALTAVA
 }
 
     showRestrita() {
