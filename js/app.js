@@ -761,8 +761,7 @@ container.appendChild(mainContainer);
 }
 
 // Inicializar aplicação
-const app = new App();
-app.init();
+window.app = new App();
 
 // 🔥 realtime atualiza a tela
 let renderTimeout;
