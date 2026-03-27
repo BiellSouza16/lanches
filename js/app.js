@@ -16,25 +16,16 @@ class App {
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-        // ✅ Carrega os dados
+        // 🔥 PRIMEIRO cria a tela
+        this.showLancamentos();
+
+        // 🔥 DEPOIS carrega os dados
         await lancamentosManager.loadLancamentos();
-this.showLancamentos();
 
-// 🔥 ESSENCIAL
-lancamentosManager.render();
-
-        setTimeout(() => {
-            lancamentosManager.render();
-        }, 100);
-        
-        // 🔥 ESSENCIAL: renderizar depois que o DOM foi criado
-        setTimeout(() => {
-            if (lancamentosManager.render) {
-                lancamentosManager.render();
-            }
-        }, 100);
+        // 🔥 render final garantido
+        lancamentosManager.render();
 
         setTimeout(() => initializeLucideIcons(), 100);
 
