@@ -174,9 +174,12 @@ class LancamentosManager {
     async updateLancamento() {
         if (!this.editingLancamento) return false;
 
-        if (!supabase) {
-            initSupabase();
-        }
+        const supabase = window.getSupabase();
+
+if (!supabase) {
+    toast.error('Supabase não inicializado!');
+    return false;
+}
 
         if (!supabase) {
             toast.error('Erro: Supabase não inicializado!');
@@ -251,9 +254,12 @@ class LancamentosManager {
 
     async deleteLancamento(id) {
         try {
-            if (!supabase) {
-                initSupabase();
-            }
+            const supabase = window.getSupabase();
+
+if (!supabase) {
+    toast.error('Supabase não inicializado!');
+    return false;
+}
 
             if (!supabase) {
                 throw new Error('Supabase não inicializado');
@@ -279,9 +285,12 @@ class LancamentosManager {
 
     async toggleVisto(id) {
         try {
-            if (!supabase) {
-                initSupabase();
-            }
+            const supabase = window.getSupabase();
+
+if (!supabase) {
+    toast.error('Supabase não inicializado!');
+    return false;
+}
 
             if (!supabase) {
                 throw new Error('Supabase não inicializado');
