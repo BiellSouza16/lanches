@@ -21,6 +21,7 @@ class LancamentosManager {
         setTimeout(() => this.render(), 100);
         return;
     }
+    }
 
     console.log('RENDER CHAMADO');
     console.log('DADOS:', this.lancamentos);
