@@ -55,7 +55,7 @@ if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
 
         if (error) throw error;
         
-        console.log('DADOS DO BANCO:'
+        console.log('DADOS DO BANCO:', data);
                     
         this.lancamentos = data || [];
 
