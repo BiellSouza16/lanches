@@ -14,40 +14,45 @@ class LancamentosManager {
     }
 
     render() {
-        const container = document.getElementById('lista-lancamentos-container');
-if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
-        console.log('RENDER CHAMADO');
-console.log('CONTAINER:', container);
-console.log('DADOS:', this.lancamentos);
+    const container = document.getElementById('lista-lancamentos-container');
 
-        let lista = document.getElementById('lista-lancamentos');
-
-        if (!lista) {
-            lista = document.createElement('div');
-            lista.id = 'lista-lancamentos';
-            lista.className = 'mt-8 space-y-2';
-            container.appendChild(lista);
-        }
-
-        lista.innerHTML = '';
-
-        this.lancamentos.forEach(l => {
-            const item = document.createElement('div');
-            item.className = 'bg-white p-3 rounded shadow text-sm';
-
-            item.innerHTML = `
-                <strong>${l.tipo}</strong> - 
-                ${l.nome || l.funcionario || '-'} <br>
-                ${new Date(l.data_hora).toLocaleString()}
-            `;
-
-            lista.appendChild(item);
-        });
+    // 🔥 Se não existir ainda, tenta de novo em 100ms
+    if (!container) {
+        setTimeout(() => this.render(), 100);
+        return;
     }
+
+    console.log('RENDER CHAMADO');
+    console.log('DADOS:', this.lancamentos);
+
+    let lista = document.getElementById('lista-lancamentos');
+
+    if (!lista) {
+        lista = document.createElement('div');
+        lista.id = 'lista-lancamentos';
+        lista.className = 'mt-8 space-y-2';
+        container.appendChild(lista);
+    }
+
+    lista.innerHTML = '';
+
+    this.lancamentos.forEach(l => {
+        const item = document.createElement('div');
+        item.className = 'bg-white p-3 rounded shadow text-sm';
+
+        item.innerHTML = `
+            <strong>${l.tipo}</strong> - 
+            ${l.nome || l.funcionario || '-'} <br>
+            ${new Date(l.data_hora).toLocaleString()}
+        `;
+
+        lista.appendChild(item);
+    });
+}
 
     async loadLancamentos() {
     try {
-        const supabase = window.supabaseClient || window.getSupabase?.();
+        const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
 
         if (!supabase) throw new Error('Supabase não inicializado');
 
@@ -131,7 +136,7 @@ console.log('DADOS:', this.lancamentos);
         return this.updateLancamento();
     }
 
-    const supabase = window.getSupabase();
+    const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
 
     if (!supabase) {
         toast.error('Erro: Supabase não inicializado!');
@@ -179,7 +184,7 @@ console.log('DADOS:', this.lancamentos);
     async updateLancamento() {
         if (!this.editingLancamento) return false;
 
-        const supabase = window.getSupabase();
+        const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
 
 if (!supabase) {
     toast.error('Supabase não inicializado!');
@@ -259,8 +264,7 @@ if (!supabase) {
 
     async deleteLancamento(id) {
         try {
-            const supabase = window.getSupabase();
-
+            const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
 if (!supabase) {
     toast.error('Supabase não inicializado!');
     return false;
@@ -290,7 +294,7 @@ if (!supabase) {
 
     async toggleVisto(id) {
         try {
-            const supabase = window.getSupabase();
+            const supabase = const supabase = window.supabaseClient || window.getSupabase?.();
 
 if (!supabase) {
     toast.error('Supabase não inicializado!');
