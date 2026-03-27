@@ -18,9 +18,9 @@ class LancamentosManager {
 
     // 🔥 Se não existir ainda, tenta de novo em 100ms
     if (!container) {
-        setTimeout(() => this.render(), 100);
-        return;
-    }
+    console.warn('Container lista-lancamentos-container não encontrado');
+    return;
+}
     }
 
     console.log('RENDER CHAMADO');
