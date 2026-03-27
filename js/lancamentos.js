@@ -54,7 +54,9 @@ if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
             .order('data_hora', { ascending: false });
 
         if (error) throw error;
-
+        
+        console.log('DADOS DO BANCO:'
+                    
         this.lancamentos = data || [];
 
         console.log('Lançamentos carregados:', this.lancamentos.length);
