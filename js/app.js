@@ -90,18 +90,18 @@ setTimeout(async () => {
         restrictedArea.appendChild(restrictedButton);
         
         mainContainer.appendChild(header);
-        mainContainer.appendChild(cardsGrid);
-        mainContainer.appendChild(restrictedArea);
-        // 🔥 CONTAINER DOS LANÇAMENTOS (IMPORTANTE)
+mainContainer.appendChild(cardsGrid);
+mainContainer.appendChild(restrictedArea);
+
+// 👇 TEM QUE ESTAR AQUI (ANTES de dar append no container final)
 const listaContainer = createElement('div');
 listaContainer.id = 'lista-lancamentos-container';
 listaContainer.className = 'mt-10 space-y-2';
 
 mainContainer.appendChild(listaContainer);
-        
-        container.appendChild(mainContainer);
 
-        return container;
+// 👇 só depois disso
+container.appendChild(mainContainer);
     }
 
     createLancamentoCard(card) {
