@@ -16,6 +16,9 @@ class LancamentosManager {
     render() {
         const container = document.getElementById('lista-lancamentos-container');
 if (!container) return; // 🔥 ISSO BLOQUEIA NA TELA INICIAL
+        console.log('RENDER CHAMADO');
+console.log('CONTAINER:', container);
+console.log('DADOS:', this.lancamentos);
 
         let lista = document.getElementById('lista-lancamentos');
 
