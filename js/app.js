@@ -47,13 +47,11 @@ lancamentosManager.render();
     showLancamentos() {
     this.activeSection = 'lancamentos';
     this.mainContent.innerHTML = '';
-
     this.mainContent.appendChild(this.createLancamentosPage());
 
-    // 🔥 render depois que a tela existe
-    setTimeout(() => {
-        lancamentosManager.render();
-        initializeLucideIcons(); // 👈 NÃO REMOVE ISSO
+    setTimeout(async () => {
+        await window.lancamentosManager.loadLancamentos();
+        window.lancamentosManager.render();
     }, 0);
 }
 
