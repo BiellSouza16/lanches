@@ -412,4 +412,4 @@ if (!supabase) {
 }
 // Instância global do gerenciador de lançamentos
 
-const lancamentosManager = new LancamentosManager();
+window.lancamentosManager = new LancamentosManager();
