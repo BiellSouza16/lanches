@@ -32,11 +32,15 @@
 <script src="js/restrita.js"></script>
 <script src="js/app.js"></script> <!-- POR ÚLTIMO -->
     
-    <script>
-        // Inicializar canal Realtime após carregar todos os scripts
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Supabase Realtime inicializado para Área Restrita');
-        });
-    </script>
+   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM carregado');
+
+        // Inicializa o app SOMENTE depois do HTML existir
+        if (window.app && typeof window.app.init === 'function') {
+            window.app.init();
+        }
+    });
+</script>
 </body>
 </html>
