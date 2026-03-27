@@ -3,7 +3,6 @@ class App {
     constructor() {
         this.activeSection = 'lancamentos';
         this.mainContent = document.getElementById('main-content');
-        this.init();
     }
 
     async init() {
@@ -15,14 +14,12 @@ class App {
             toast.error('Erro ao conectar com o banco de dados!');
             return;
         }
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-
+        
         // 🔥 PRIMEIRO cria a tela
         this.showLancamentos();
 
         // 🔥 DEPOIS carrega os dados
-        await lancamentosManager.loadLancamentos();
+        window.lancamentosManager.render();
 
         // 🔥 render final garantido
         lancamentosManager.render();
@@ -774,15 +771,18 @@ mainContainer.appendChild(listaContainer);
 const app = new App();
 app.init();
 
-// 🔥 carregar dados (sem await aqui)
-window.lancamentosManager.loadLancamentos();
-
 // 🔥 realtime atualiza a tela
+let renderTimeout;
+
 realtimeSync.addCallback(() => {
-    if (window.lancamentosManager && app.activeSection === 'lancamentos') {
+    if (!window.lancamentosManager || app.activeSection !== 'lancamentos') return;
+
+    clearTimeout(renderTimeout);
+    renderTimeout = setTimeout(() => {
         window.lancamentosManager.render();
-    }
+    }, 100);
 });
+
 // Adicionar suporte para adicionar campo 'visto' na tabela se não existir
 async function ensureVistoField() {
     try {
@@ -801,4 +801,3 @@ async function ensureVistoField() {
         console.log('Verificação do campo visto:', error);
     }
 }
-ensureVistoField();
