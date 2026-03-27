@@ -2,7 +2,7 @@
 class AreaRestrita {
     constructor() {
         this.isAuthenticated = false;
-        this.password = atob('MDcxNg=='); // 0716
+        this.password = '0716';
         this.currentView = 'dashboard';
         this.updateCallbacks = [];
         this.filteredData = [];
